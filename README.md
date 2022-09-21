@@ -7,9 +7,6 @@
   <p align="center">
     An (unofficial) .NET wrapper around SurrealDB REST API.
   </p>
-  <p align="center">
-    NOTE: SurrealDB is not my idea, I'm just a guy trying to use it in my own projects. You can find everything about the project at SurrealDB's website (https://surrealdb.com).
-  </p>
 
 ## Table of contents
 
@@ -20,7 +17,7 @@
 
 # About The Project
 
-This project is aimed to be a .NET wrapper around [SurrealDB](https://surrealdb.com)'s REST API (and in the future also around the Websocket implementation), it's still very much
+This project is aimed to be a .NET wrapper around [SurrealDB](https://surrealdb.com)'s REST API and RPC Websocket implementation, it's still very much
 in open development (something is working but maybe not in the right way).
 
 ## Contributing
@@ -36,3 +33,4 @@ Contributions are what make the open source community such an amazing place to b
 # Contributors
 
 [Mattia Ricci](https://github.com/tiaringhio)
+[Brian Duhs](https://github.com/Du-z)
