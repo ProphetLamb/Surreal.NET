@@ -22,8 +22,10 @@ public static class SurrealInstance {
 
     private static Process? Instantiate(string path) {
         ProcessStartInfo pi = new() {
-            CreateNoWindow = true,
-            UseShellExecute = false,
+            // These two settings can make the tests run twice as fast, but makes it harder to kill rouge DB instances
+            //CreateNoWindow = true,
+            //UseShellExecute = false,
+            UseShellExecute = true,
             FileName = path,
             Arguments = $"start memory -b {TestHelper.Loopback}:{TestHelper.Port} -u {TestHelper.User} -p {TestHelper.Pass} --log debug",
             WorkingDirectory = Environment.CurrentDirectory
