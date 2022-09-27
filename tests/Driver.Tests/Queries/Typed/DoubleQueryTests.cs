@@ -12,12 +12,28 @@ public class RestDoubleQueryTests : DoubleQueryTests<DatabaseRest> {
 public abstract class DoubleQueryTests <T> : MathQueryTests<T, double, double>
     where T : IDatabase, IDisposable, new() {
 
-    protected override double RandomKey() {
-        return RandomDouble();
+    private static IEnumerable<double> TestValues {
+        get {
+            yield return 1000; // Can't go too high otherwise the maths operations might overflow
+            yield return 0;
+            yield return -1000;
+        }
     }
 
-    protected override double RandomValue() {
-        return (RandomDouble() * 2000d) - 1000d; // Can't go too high otherwise the maths operations might overflow
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomDouble(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     protected override string ValueCast() {

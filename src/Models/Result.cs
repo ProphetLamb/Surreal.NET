@@ -39,7 +39,7 @@ public readonly struct Result : IEquatable<Result>, IComparable<Result> {
         if (_json.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null) {
             return default;
         }
-        var obj = _json.Deserialize<T>(Constants.JsonOptions);
+        var obj = _json.Deserialize<T>(SerializerOptions.Shared);
         return obj;
     }
 
@@ -50,7 +50,7 @@ public readonly struct Result : IEquatable<Result>, IComparable<Result> {
 
         var en = _json.EnumerateArray();
         while (en.MoveNext()) {
-            T? v = en.Current.Deserialize<T>(Constants.JsonOptions);
+            T? v = en.Current.Deserialize<T>(SerializerOptions.Shared);
             if (!EqualityComparer<T>.Default.Equals(default, v)) {
                 yield return v!;
             }

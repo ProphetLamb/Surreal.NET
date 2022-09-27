@@ -11,24 +11,34 @@ public class RestTimeOnlyQueryTests : TimeOnlyQueryTests<DatabaseRest> {
 public abstract class TimeOnlyQueryTests<T> : InequalityQueryTests<T, int, TimeOnly>
     where T : IDatabase, IDisposable, new(){
 
-    protected override int RandomKey() {
-        return RandomInt();
+    private static IEnumerable<TimeOnly> TestValues {
+        get {
+            yield return new TimeOnly(10, 5, 32, 648);
+            yield return new TimeOnly(20, 55, 54, 3);
+            yield return new TimeOnly(1, 2, 3, 4);
+            yield return TimeOnly.MaxValue;
+            yield return TimeOnly.MinValue;
+        }
     }
 
-    protected override TimeOnly RandomValue() {
-        return RandomTimeOnly();
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomInt(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     private static int RandomInt() {
         return ThreadRng.Shared.Next();
-    }
-
-    private static TimeOnly RandomTimeOnly() {
-        var minDate = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var maxDate = new DateTime(2000, 1, 2, 0, 0, 0, DateTimeKind.Utc);
-        var diff = (maxDate - minDate).TotalMicroseconds();
-        var randomeDateTime = minDate.AddMicroseconds((long)(ThreadRng.Shared.NextDouble() * diff));
-        return TimeOnly.FromDateTime(randomeDateTime);
     }
 
     public TimeOnlyQueryTests(ITestOutputHelper logger) : base(logger) {

@@ -12,12 +12,28 @@ public class RestDecimalQueryTests : DecimalQueryTests<DatabaseRest> {
 public abstract class DecimalQueryTests <T> : MathQueryTests<T, decimal, decimal>
     where T : IDatabase, IDisposable, new() {
 
-    protected override decimal RandomKey() {
-        return RandomDouble();
+    private static IEnumerable<decimal> TestValues {
+        get {
+            yield return 1000; // Can't go too high otherwise the maths operations might overflow
+            yield return 0;
+            yield return -1000;
+        }
     }
 
-    protected override decimal RandomValue() {
-        return (RandomDouble() * 2000m) - 1000m; // Can't go too high otherwise the maths operations might overflow
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomDouble(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     protected override string ValueCast() {

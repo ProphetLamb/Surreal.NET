@@ -12,12 +12,28 @@ public class RestGuidQueryTests : GuidQueryTests<DatabaseRest> {
 public abstract class GuidQueryTests<T> : EqualityQueryTests<T, Guid, Guid>
     where T : IDatabase, IDisposable, new() {
 
-    protected override Guid RandomKey() {
-        return RandomGuid();
+
+    private static IEnumerable<Guid> TestValues {
+        get {
+            yield return Guid.NewGuid();
+            yield return Guid.Empty;
+        }
     }
 
-    protected override Guid RandomValue() {
-        return RandomGuid();
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomGuid(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     private static Guid RandomGuid() {

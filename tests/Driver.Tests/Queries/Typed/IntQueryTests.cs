@@ -11,13 +11,29 @@ public class RestIntQueryTests : IntQueryTests<DatabaseRest> {
 
 public abstract class IntQueryTests <T> : MathQueryTests<T, int, int>
     where T : IDatabase, IDisposable, new() {
-
-    protected override int RandomKey() {
-        return RandomInt();
+    
+    private static IEnumerable<int> TestValues {
+        get {
+            yield return 10000; // Can't go too high otherwise the maths operations might overflow
+            yield return 0;
+            yield return -10000;
+        }
     }
 
-    protected override int RandomValue() {
-        return ThreadRng.Shared.Next(-10000, 10000); // Can't go too high otherwise the maths operations might overflow
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomInt(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     protected override string ValueCast() {

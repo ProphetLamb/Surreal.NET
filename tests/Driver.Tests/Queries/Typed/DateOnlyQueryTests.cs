@@ -10,13 +10,30 @@ public class RestDateOnlyQueryTests : DateOnlyQueryTests<DatabaseRest> {
 
 public abstract class DateOnlyQueryTests<T> : InequalityQueryTests<T, int, DateOnly>
     where T : IDatabase, IDisposable, new() {
-
-    protected override int RandomKey() {
-        return RandomInt();
+    
+    private static IEnumerable<DateOnly> TestValues {
+        get {
+            yield return new DateOnly(2012, 6, 12);
+            yield return new DateOnly(2012, 10, 2);
+            yield return DateOnly.MaxValue;
+            yield return DateOnly.MinValue;
+        }
     }
 
-    protected override DateOnly RandomValue() {
-        return RandomDateOnly();
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomInt(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     private static int RandomInt() {

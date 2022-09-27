@@ -12,11 +12,11 @@ public sealed partial class DatabaseRpc : IDatabase {
         return await Use(db, ns, ct);
     }
 
-    async Task<IResponse> IDatabase.Signup(Authentication auth, CancellationToken ct) {
+    async Task<IResponse> IDatabase.Signup(object auth, CancellationToken ct) {
         return await Signup(auth, ct);
     }
 
-    async Task<IResponse> IDatabase.Signin(Authentication auth, CancellationToken ct) {
+    async Task<IResponse> IDatabase.Signin(object auth, CancellationToken ct) {
         return await Signin(auth, ct);
     }
 

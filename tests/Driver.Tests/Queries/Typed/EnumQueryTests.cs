@@ -12,22 +12,30 @@ public class RestEnumQueryTests : EnumQueryTests<DatabaseRest> {
 public abstract class EnumQueryTests<T> : EqualityQueryTests<T, int, StandardEnum>
     where T : IDatabase, IDisposable, new() {
 
-    protected override int RandomKey() {
-        return RandomInt();
+    private static IEnumerable<StandardEnum> TestValues {
+        get {
+            return Enum.GetValues(typeof(StandardEnum)).Cast<StandardEnum>();
+        }
     }
 
-    protected override StandardEnum RandomValue() {
-        return RandomEnum();
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomInt(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     private static int RandomInt() {
         return ThreadRng.Shared.Next();
-    }
-
-    private static StandardEnum RandomEnum() {
-        var enumValues = EnumHelper.GetValues<StandardEnum>();
-        var index = ThreadRng.Shared.Next(0, enumValues.Length);
-        return enumValues[index];
     }
 
     public EnumQueryTests(ITestOutputHelper logger) : base(logger) {

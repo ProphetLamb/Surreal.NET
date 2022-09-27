@@ -34,8 +34,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(SingleTests))]
     public void FloatConverterTests(object testValue, float expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<float>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<float>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 
@@ -71,8 +71,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(DoubleTests))]
     public void DoubleConverterTests(object testValue, double expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<double>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<double>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 
@@ -98,8 +98,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(DecimalTests))]
     public void DecimalConverterTests(object testValue, decimal expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<decimal>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<decimal>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 
@@ -129,8 +129,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(TimeSpanTests))]
     public void TimeSpanConverterTests(object testValue, TimeSpan expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<TimeSpan>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<TimeSpan>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 
@@ -160,8 +160,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(DateTimeOffsetTests))]
     public void DateTimeOffsetConverterTests(object testValue, DateTimeOffset expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<DateTimeOffset>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<DateTimeOffset>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 
@@ -196,8 +196,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(DateTimeTests))]
     public void DateTimeConverterTests(object testValue, DateTime expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<DateTime>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<DateTime>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 
@@ -225,8 +225,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(DateTests))]
     public void DateConverterTests(object testValue, DateOnly expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<DateOnly>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<DateOnly>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 
@@ -256,8 +256,8 @@ public class ConversionTests {
     [Theory]
     [MemberData(nameof(TimeTests))]
     public void TimeConverterTests(object testValue, TimeOnly expectedValue) {
-        var json = JsonSerializer.Serialize(testValue, Constants.JsonOptions);
-        var result = JsonSerializer.Deserialize<TimeOnly>(json, Constants.JsonOptions);
+        var json = JsonSerializer.Serialize(testValue, SerializerOptions.Shared);
+        var result = JsonSerializer.Deserialize<TimeOnly>(json, SerializerOptions.Shared);
         result.Should().Be(expectedValue);
     }
 }

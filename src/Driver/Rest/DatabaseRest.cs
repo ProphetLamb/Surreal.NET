@@ -80,15 +80,15 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse>, IDisposable 
     }
 
     public async Task<RestResponse> Signup(
-        Authentication auth,
+        object auth,
         CancellationToken ct = default) {
         return await Signup(ToJsonContent(auth), ct);
     }
 
     public async Task<RestResponse> Signin(
-        Authentication auth,
+        object auth,
         CancellationToken ct = default) {
-        SetAuth(auth.Username, auth.Password);
+        // SetAuth(auth.Username, auth.Password);
         HttpResponseMessage rsp = await _client.PostAsync("signin", ToJsonContent(auth), ct);
         return await rsp.ToSurreal();
     }
@@ -304,7 +304,7 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse>, IDisposable 
     }
 
     private string ToJson<T>(T? v) {
-        return JsonSerializer.Serialize(v, Constants.JsonOptions);
+        return JsonSerializer.Serialize(v, SerializerOptions.Shared);
     }
 
     private HttpContent ToJsonContent<T>(T? v) {

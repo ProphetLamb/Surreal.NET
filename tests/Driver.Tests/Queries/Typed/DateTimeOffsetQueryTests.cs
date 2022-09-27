@@ -11,12 +11,28 @@ public class RestDateTimeOffsetQueryTests : DateTimeOffsetQueryTests<DatabaseRes
 public abstract class DateTimeOffsetQueryTests<T> : InequalityQueryTests<T, int, DateTimeOffset>
     where T : IDatabase, IDisposable, new() {
 
-    protected override int RandomKey() {
-        return RandomInt();
+    private static IEnumerable<DateTimeOffset> TestValues {
+        get {
+            //yield return new DateTimeOffset(2012, 6, 12, 10, 5, 32, 648, TimeSpan.Zero);
+            yield return DateTimeOffset.MaxValue.ToUniversalTime();
+            yield return DateTimeOffset.MinValue.ToUniversalTime();
+        }
     }
 
-    protected override DateTimeOffset RandomValue() {
-        return RandomDateTimeOffset();
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomInt(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     private static int RandomInt() {

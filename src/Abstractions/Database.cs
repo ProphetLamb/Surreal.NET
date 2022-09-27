@@ -27,7 +27,7 @@ public interface IDatabase<TResponse>
     ///     Signs up to a specific authentication scope.
     /// </summary>
     /// <param name="auth"> Variables used in a signin query. </param>
-    public new Task<TResponse> Signup(Authentication auth, CancellationToken ct = default);
+    public new Task<TResponse> Signup(object auth, CancellationToken ct = default);
 
     /// <summary>
     ///     Signs in to a specific authentication scope.
@@ -36,7 +36,7 @@ public interface IDatabase<TResponse>
     /// <remarks>
     ///     This updates the internal <see cref="Config" />.
     /// </remarks>
-    public new Task<TResponse> Signin(Authentication auth, CancellationToken ct = default);
+    public new Task<TResponse> Signin(object auth, CancellationToken ct = default);
 
     /// <summary>
     ///     Invalidates the authentication for the current connection.
@@ -180,7 +180,7 @@ public interface IDatabase {
     ///     Signs up to a specific authentication scope.
     /// </summary>
     /// <param name="auth"> Variables used in a signin query. </param>
-    public Task<IResponse> Signup(Authentication auth, CancellationToken ct = default);
+    public Task<IResponse> Signup(object auth, CancellationToken ct = default);
 
     /// <summary>
     ///     Signs in to a specific authentication scope.
@@ -189,7 +189,7 @@ public interface IDatabase {
     /// <remarks>
     ///     This updates the internal <see cref="Config" />.
     /// </remarks>
-    public Task<IResponse> Signin(Authentication auth, CancellationToken ct = default);
+    public Task<IResponse> Signin(object auth, CancellationToken ct = default);
 
     /// <summary>
     ///     Invalidates the authentication for the current connection.

@@ -10,26 +10,35 @@ public class RestTimeSpanQueryTests : TimeSpanQueryTests<DatabaseRest> {
 
 public abstract class TimeSpanQueryTests<T> : InequalityQueryTests<T, int, TimeSpan>
     where T : IDatabase, IDisposable, new() {
-
-    protected override int RandomKey() {
-        return RandomInt();
+    
+    private static IEnumerable<TimeSpan> TestValues {
+        get {
+            yield return new TimeSpan(1, 2, 3, 4, 5);
+            yield return new TimeSpan(200, 20, 34, 41, 65);
+            yield return TimeSpan.Zero;
+        }
     }
 
-    protected override TimeSpan RandomValue() {
-        return RandomTimeOnly();
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomInt(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     private static int RandomInt() {
         return ThreadRng.Shared.Next();
     }
-
-    private static TimeSpan RandomTimeOnly() {
-        var minDate = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var maxDate = new DateTime(2000, 1, 2, 0, 0, 0, DateTimeKind.Utc);
-        var diff = (maxDate - minDate);
-        return diff;
-    }
-
+    
     public TimeSpanQueryTests(ITestOutputHelper logger) : base(logger) {
     }
 }

@@ -1,12 +1,12 @@
-﻿namespace SurrealDB.Driver.Tests.Queries;
+namespace SurrealDB.Driver.Tests.Queries;
 
 public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, TValue>
     where T : IDatabase, IDisposable, new() {
-    [Fact]
-    public async Task EqualsQueryTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData("KeyPairs")]
+    public async Task EqualsQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
-            var val1 = RandomValue();
-            var val2 = RandomValue();
             var expectedResult = (dynamic)val1! == (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
 
             string sql = $"SELECT * FROM ($val1 = $val2)";
@@ -21,12 +21,11 @@ public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, 
             Assert.Equal(resultValue, expectedResult);
         }
     );
-
-    [Fact]
-    public async Task NotEqualsQueryTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData("KeyPairs")]
+    public async Task NotEqualsQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
-            var val1 = RandomValue();
-            var val2 = RandomValue();
             var expectedResult = (dynamic)val1! != (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
 
             string sql = $"SELECT * FROM ($val1 != $val2)";

@@ -1,13 +1,12 @@
-﻿namespace SurrealDB.Driver.Tests.Queries;
+namespace SurrealDB.Driver.Tests.Queries;
 
 public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests<T, TKey, TValue>
     where T : IDatabase, IDisposable, new() {
-
-    [Fact]
-    public async Task LessThanQueryTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData("KeyPairs")]
+    public async Task LessThanQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
-            var val1 = RandomValue();
-            var val2 = RandomValue();
             var expectedResult = (dynamic)val1! < (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
 
             string sql = $"SELECT * FROM ($val1 < $val2)";
@@ -22,12 +21,11 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
             Assert.Equal(resultValue, expectedResult);
         }
     );
-
-    [Fact]
-    public async Task LessThanOrEqualToQueryTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData("KeyPairs")]
+    public async Task LessThanOrEqualToQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
-            var val1 = RandomValue();
-            var val2 = RandomValue();
             var expectedResult = (dynamic)val1! <= (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
 
             string sql = $"SELECT * FROM ($val1 <= $val2)";
@@ -42,12 +40,11 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
             Assert.Equal(resultValue, expectedResult);
         }
     );
-
-    [Fact]
-    public async Task GreaterThanQueryTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData("KeyPairs")]
+    public async Task GreaterThanQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
-            var val1 = RandomValue();
-            var val2 = RandomValue();
             var expectedResult = (dynamic)val1! > (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
 
             string sql = $"SELECT * FROM ($val1 > $val2)";
@@ -62,12 +59,11 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
             Assert.Equal(resultValue, expectedResult);
         }
     );
-
-    [Fact]
-    public async Task GreaterThanOrEqualToQueryTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData("KeyPairs")]
+    public async Task GreaterThanOrEqualToQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
-            var val1 = RandomValue();
-            var val2 = RandomValue();
             var expectedResult = (dynamic)val1! >= (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
 
             string sql = $"SELECT * FROM ($val1 >= $val2)";

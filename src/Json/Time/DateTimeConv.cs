@@ -42,7 +42,7 @@ public sealed class DateTimeConv : JsonConverter<DateTime> {
         return false;
     }
 
-    public static string ToString(in DateTimeOffset value) {
+    public static string ToString(in DateTime value) {
         return value.ToString("O");
     }
 

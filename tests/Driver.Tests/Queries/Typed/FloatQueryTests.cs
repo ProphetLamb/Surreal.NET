@@ -12,12 +12,28 @@ public class RestFloatQueryTests : FloatQueryTests<DatabaseRest> {
 public abstract class FloatQueryTests <T> : MathQueryTests<T, float, float>
     where T : IDatabase, IDisposable, new() {
 
-    protected override float RandomKey() {
-        return RandomFloat();
+    private static IEnumerable<float> TestValues {
+        get {
+            yield return 1000; // Can't go too high otherwise the maths operations might overflow
+            yield return 0;
+            yield return -1000;
+        }
     }
 
-    protected override float RandomValue() {
-        return (RandomFloat() * 2000) - 1000; // Can't go too high otherwise the maths operations might overflow
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomFloat(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     protected override string ValueCast() {

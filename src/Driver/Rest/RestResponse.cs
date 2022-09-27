@@ -84,7 +84,7 @@ public readonly struct RestResponse : IResponse {
         Stream stream = await msg.Content.ReadAsStreamAsync();
         #endif
         if (msg.StatusCode != HttpStatusCode.OK) {
-            Error? err = await JsonSerializer.DeserializeAsync<Error>(stream, Constants.JsonOptions, ct);
+            Error? err = await JsonSerializer.DeserializeAsync<Error>(stream, SerializerOptions.Shared, ct);
             return From(err);
         }
 
@@ -93,7 +93,7 @@ public readonly struct RestResponse : IResponse {
             return EmptyOk;
         }
 
-        List<Success>? docs = await JsonSerializer.DeserializeAsync<List<Success>>(stream, Constants.JsonOptions, ct);
+        List<Success>? docs = await JsonSerializer.DeserializeAsync<List<Success>>(stream, SerializerOptions.Shared, ct);
         Success doc = (docs?.FirstOrDefault(e => e.result.ValueKind != JsonValueKind.Null)).GetValueOrDefault(default);
 
         return From(doc);

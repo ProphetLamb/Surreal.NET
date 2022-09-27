@@ -22,7 +22,7 @@ public static class SurrealInstance {
 
     private static Process? Instantiate(string path) {
         ProcessStartInfo pi = new() {
-            // These two settings can make the tests run twice as fast, but makes it harder to kill rouge DB instances
+            // These two settings can make the tests run more than twice as fast, but makes it harder to kill rouge DB instances
             //CreateNoWindow = true,
             //UseShellExecute = false,
             UseShellExecute = true,

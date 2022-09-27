@@ -92,7 +92,7 @@ public sealed class WsClient : IDisposable, IAsyncDisposable {
 
         await using RecyclableMemoryStream stream = new(s_manager.Value);
 
-        await JsonSerializer.SerializeAsync(stream, req, Constants.JsonOptions, ct);
+        await JsonSerializer.SerializeAsync(stream, req, SerializerOptions.Shared, ct);
         // Now Position = Length = EndOfMessage
         // Write the buffer to the websocket
         stream.Position = 0;
@@ -104,7 +104,7 @@ public sealed class WsClient : IDisposable, IAsyncDisposable {
         await ReceiveStream(_ws!, stream, ct);
         // Read the buffer to json DOM
         stream.Position = 0;
-        Response rsp = await JsonSerializer.DeserializeAsync<Response>(stream, Constants.JsonOptions, ct);
+        Response rsp = await JsonSerializer.DeserializeAsync<Response>(stream, SerializerOptions.Shared, ct);
         return rsp;
     }
 

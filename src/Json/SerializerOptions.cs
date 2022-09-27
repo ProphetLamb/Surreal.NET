@@ -10,13 +10,13 @@ namespace SurrealDB.Json;
 /// <summary>
 /// Collection of repeatedly used constants.
 /// </summary>
-public static class Constants {
+public static class SerializerOptions {
     private static readonly Lazy<JsonSerializerOptions> _jsonSerializerOptions = new(CreateJsonOptions);
 
     /// <summary>
     /// Creates or returns the shared <see cref="JsonSerializerOptions"/> instance for this thread.
     /// </summary>
-    public static JsonSerializerOptions JsonOptions => _jsonSerializerOptions.Value;
+    public static JsonSerializerOptions Shared => _jsonSerializerOptions.Value;
 
     /// <summary>
     /// Instantiates a new instance of <see cref="JsonSerializerOptions"/> with default settings.
@@ -29,10 +29,10 @@ public static class Constants {
             WriteIndented = false,
             NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.AllowNamedFloatingPointLiterals,
             // This was throwing an exception when set to JsonIgnoreCondition.Always
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+            DefaultIgnoreCondition = JsonIgnoreCondition.Never,
             // TODO: Remove this when the server is fixed, see: https://github.com/surrealdb/surrealdb/issues/137
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            IgnoreReadOnlyFields = false,
+            IgnoreReadOnlyProperties = false,
             UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
             Converters = { new JsonStringEnumConverter(), new DecimalConv(), new DoubleConv(), new SingleConv(), new DateTimeConv() , new DateTimeOffsetConv(), new TimeSpanConv(), new TimeOnlyConv(), new DateOnlyConv() },
         };

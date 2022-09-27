@@ -12,12 +12,33 @@ public class RpcStringQueryTests : StringQueryTests<DatabaseRpc> {
 public abstract class StringQueryTests<T> : EqualityQueryTests<T, string, string>
     where T : IDatabase, IDisposable, new() {
 
-    protected override string RandomKey() {
-        return RandomString();
+    private static IEnumerable<string> TestValues {
+        get {
+            yield return "Test";
+            yield return "Test123";
+            yield return "Test 123";
+            yield return "Test-123";
+            yield return "Test_123";
+            //yield return "Test\n123";
+            yield return "";
+            yield return null;
+        }
     }
 
-    protected override string RandomValue() {
-        return RandomString();
+    public static IEnumerable<object[]> KeyAndValuePairs {
+        get {
+            return TestValues.Select(e => new object[] { RandomString(), e });
+        }
+    }
+    
+    public static IEnumerable<object[]> KeyPairs {
+        get {
+            foreach (var testValue1 in TestValues) {
+                foreach (var testValue2 in TestValues) {
+                    yield return new object[] { testValue1, testValue2 };
+                }
+            }
+        }
     }
 
     private static string RandomString(int length = 10) {
