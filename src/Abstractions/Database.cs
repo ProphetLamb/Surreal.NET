@@ -7,7 +7,7 @@ namespace SurrealDB.Abstractions;
 ///     Shared interface for interacting with a Surreal database instance
 /// </summary>
 public interface IDatabase<TResponse>
-    : IDatabase
+    : IDisposable
     where TResponse : IResponse {
 
     /// <summary>
@@ -125,7 +125,7 @@ public interface IDatabase<TResponse>
     ///     This function will run the following query in the database:
     ///     <code>UPDATE $thing PATCH $data;</code>
     /// </remarks>
-    public new Task<TResponse> Modify(Thing thing, object[] patches, CancellationToken ct = default);
+    public new Task<TResponse> Modify(Thing thing, Patch[] patches, CancellationToken ct = default);
 
     /// <summary>
     ///     Deletes all records in a table, or a specific record, from the database.
@@ -141,7 +141,8 @@ public interface IDatabase<TResponse>
 /// <summary>
 ///     Shared interface for interacting with a Surreal database instance
 /// </summary>
-public interface IDatabase {
+public interface IDatabase
+    : IDisposable {
     /// <summary>
     ///     Returns a copy of the current configuration.
     /// </summary>
@@ -279,7 +280,7 @@ public interface IDatabase {
     ///     This function will run the following query in the database:
     ///     <code>UPDATE $thing PATCH $data;</code>
     /// </remarks>
-    public Task<IResponse> Modify(Thing thing, object[] data, CancellationToken ct = default);
+    public Task<IResponse> Modify(Thing thing, Patch[] data, CancellationToken ct = default);
 
     /// <summary>
     ///     Deletes all records in a table, or a specific record, from the database.

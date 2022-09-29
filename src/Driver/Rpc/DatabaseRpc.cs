@@ -5,7 +5,7 @@ using SurrealDB.Ws;
 
 namespace SurrealDB.Driver.Rpc;
 
-public sealed partial class DatabaseRpc : IDatabase<RpcResponse>, IDisposable {
+public sealed partial class DatabaseRpc : IDatabase<RpcResponse> {
     private readonly WsClient _client = new();
     private Config _config;
     private bool _configured;
@@ -154,17 +154,12 @@ public sealed partial class DatabaseRpc : IDatabase<RpcResponse>, IDisposable {
     }
 
     /// <inheritdoc />
-    public async Task<RpcResponse> Modify(
-        Thing thing,
-        object[] patches,
-        CancellationToken ct = default) {
+    public async Task<RpcResponse> Modify(Thing thing, Patch[] patches, CancellationToken ct = default) {
         return await _client.Send(new() { method = "modify", parameters = new() { thing, patches, }, }, ct).ToSurreal();
     }
 
     /// <inheritdoc />
-    public async Task<RpcResponse> Delete(
-        Thing thing,
-        CancellationToken ct = default) {
+    public async Task<RpcResponse> Delete(Thing thing, CancellationToken ct = default) {
         return await _client.Send(new() { method = "delete", parameters = new() { thing, }, }, ct).ToSurreal();
     }
 

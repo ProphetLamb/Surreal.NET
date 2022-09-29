@@ -97,9 +97,9 @@ public abstract class QueryTests<T, TKey, TValue>
 
             Thing thing = Thing.From("object", createdObject.Key!.ToString());
             await db.Create(thing, createdObject);
-            await db.Modify(thing, new[] {
-                new {  op = "replace", path = "/Value", value = value },
-                new {  op = "add", path = "/MergeValue", value = value },
+            await db.Modify(thing, new[]{
+                Patch.Replace("/Value", value!),
+                Patch.Add("/MergeValue", value!)
             });
 
             // Modify return the applied JSON patch from the request!

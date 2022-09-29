@@ -18,6 +18,7 @@ jobs:
       matrix:
         dotnet:
           [{ ch: "3.1", ver: "netcoreapp31" }, { ch: "6.0", ver: "net60" }]
+        nightly: [true, false]
 
     steps:
       - name: Checkout
@@ -36,6 +37,7 @@ jobs:
         run: |
           mkdir -p ~/.local/bin
           export INSTALL_DIR=~/.local/bin
+          export NIGHTLY=${{ matrix.nightly }}
           curl -sSf https://install.surrealdb.com | sh
           export PATH="$HOME/.local/bin/:$PATH"
 
@@ -60,7 +62,7 @@ jobs:
         if: success() || failure()
         uses: phoenix-actions/test-reporting@v8
         with:
-          name: unittest-results
+          name: results-${{ matrix.dotnet.ver }}-${{ matrix.nightly }}
           path: test-results.trx
           reporter: dotnet-trx
           fail-on-error: false

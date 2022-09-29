@@ -72,7 +72,9 @@ public abstract class DatabaseTestDriver<T>
         );
 
         string newTitle = "Founder & CEO & Ruler of the known free World";
-        IResponse modifyResp = await db.Modify(thing1, new object[] { new { op = "replace", path = "/Title", value = newTitle, }, });
+        IResponse modifyResp = await db.Modify(thing1, new[] {
+            Patch.Replace("/Title", newTitle),
+        });
         AssertOk(modifyResp);
 
         AssertOk(await db.Let("tbl", "person"));

@@ -65,7 +65,7 @@ While Surreal .NET can be registered as a [ASP.NET Core](https://learn.microsoft
 I highly recommend taking a looksie at the [examples](https://github.com/ProphetLamb/Surreal.Net/tree/master/examples), but for now let's review a basic console app with the RPC library.
 
 ```xml
-<PackageReference Include="SurrealDB.Driver.Rest" Version="1.0.5" />
+<PackageReference Include="SurrealDB.Driver.Rest" Version="1.0.6" />
 ```
 
 ```csharp

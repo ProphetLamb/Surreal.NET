@@ -3,12 +3,24 @@ using SurrealDB.Common;
 #pragma warning disable CS0169
 
 namespace SurrealDB.Driver.Tests.Queries;
-public class RestGeneralQueryTests : GeneralQueryTests<DatabaseRest> { }
-public class RpcGeneralQueryTests : GeneralQueryTests<DatabaseRpc> { }
+public class RestGeneralQueryTests : GeneralQueryTests<DatabaseRest> {
+    public RestGeneralQueryTests(ITestOutputHelper logger) : base(logger) {
+    }
+}
+public class RpcGeneralQueryTests : GeneralQueryTests<DatabaseRpc> {
+    public RpcGeneralQueryTests(ITestOutputHelper logger) : base(logger) {
+    }
+}
 
 [Collection("SurrealDBRequired")]
 public abstract class GeneralQueryTests<T>
     where T : IDatabase, IDisposable, new() {
+
+    protected readonly ITestOutputHelper Logger;
+
+    public GeneralQueryTests(ITestOutputHelper logger) {
+        Logger = logger;
+    }
 
 
     private record GroupedCountries {
@@ -164,4 +176,44 @@ GROUP BY country;";
             doc.Should().BeEquivalentTo(expectedResult);
         }
     );
+
+    [Fact]
+    public async Task SimultaneousDatabaseOperations() => await DbHandle<T>.WithDatabase(
+        async db => {
+            var taskCount = 50;
+            var tasks = Enumerable.Range(0, taskCount).Select(i => DbTask(i, db));
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+    );
+
+    private async Task DbTask(int i, T db) {
+        Logger.WriteLine($"Start {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
+
+        var expectedResult = new TestObject<int, int>(i, i);
+        Thing thing = Thing.From("object", expectedResult.Key.ToString());
+
+        var createResponse = await db.Create(thing, expectedResult).ConfigureAwait(false);
+        AssertResponse(createResponse, expectedResult);
+        Logger.WriteLine($"Create {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
+        
+        var selectResponse = await db.Select(thing).ConfigureAwait(false);
+        AssertResponse(selectResponse, expectedResult);
+        Logger.WriteLine($"Select {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
+        
+        string sql = "SELECT * FROM $record";
+        Dictionary<string, object?> param = new() { ["record"] = thing };
+        var queryResponse = await db.Query(sql, param).ConfigureAwait(false);
+        AssertResponse(queryResponse, expectedResult);
+        Logger.WriteLine($"Query {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
+
+        Logger.WriteLine($"End {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
+    }
+
+    private static void AssertResponse(IResponse? response, TestObject<int, int> expectedResult) {
+        Assert.NotNull(response);
+        TestHelper.AssertOk(response);
+        Assert.True(response.TryGetResult(out Result result));
+        TestObject<int, int>? doc = result.GetObject<TestObject<int, int>>();
+        doc.Should().BeEquivalentTo(expectedResult);
+    }
 }
