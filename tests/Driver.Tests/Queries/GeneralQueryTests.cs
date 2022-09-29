@@ -29,15 +29,15 @@ public abstract class GeneralQueryTests<T>
     }
 
     private class MathRequestDocument {
-        public float f1 {get; set;}
-        public float f2 {get; set;}
+        public float f1 { get; set; }
+        public float f2 { get; set; }
     }
 
     private class MathResultDocument {
-        public float result {get; set;}
+        public float result { get; set; }
     }
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task SimpleFuturesQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = "select * from <future> { time::now() };";
@@ -76,7 +76,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task CryptoFunctionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = "SELECT * FROM crypto::md5(\"tobie\");";
@@ -91,13 +91,13 @@ GROUP BY country;";
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task SimpleAdditionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = 1, f2 = 1, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
-        Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
-        await db.Create(thing, expectedObject);
+            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+            await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
             Dictionary<string, object?> param = new() { ["record"] = thing };
@@ -111,7 +111,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task EpsilonAdditionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = float.Epsilon, f2 = float.Epsilon, };
@@ -133,7 +133,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task MinValueAdditionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = float.MinValue, f2 = float.MaxValue, };
@@ -155,7 +155,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task MaxValueSubtractionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = float.MaxValue, f2 = float.MinValue, };
@@ -176,7 +176,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task SimultaneousDatabaseOperations() => await DbHandle<T>.WithDatabase(
         async db => {
             var taskCount = 50;

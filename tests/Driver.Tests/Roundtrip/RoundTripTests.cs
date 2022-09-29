@@ -15,7 +15,7 @@ public abstract class RoundTripTests<T>
 
     protected RoundTripObject Expected = new();
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task CreateRoundTripTest() => await DbHandle<T>.WithDatabase(
         async db => {
             Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
@@ -29,7 +29,7 @@ public abstract class RoundTripTests<T>
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task CreateAndSelectRoundTripTest() => await DbHandle<T>.WithDatabase(
         async db => {
             Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
@@ -44,7 +44,7 @@ public abstract class RoundTripTests<T>
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task CreateAndQueryRoundTripTest() => await DbHandle<T>.WithDatabase(
         async db => {
             Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
@@ -60,7 +60,7 @@ public abstract class RoundTripTests<T>
         }
     );
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task CreateAndParameterizedQueryRoundTripTest() => await DbHandle<T>.WithDatabase(async db => {
         Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
         var rsp = await db.Create(thing, Expected);
@@ -174,10 +174,10 @@ public class RoundTripObject {
     public TestObject<int, int>? TestObject { get; set; } = new(-100, 1);
     public TestObject<int, int>? NullTestObject { get; set; } = null;
 
-    public int[] IntArray { get; set; } = new [] {-100, 1, 0, -1, 100};
+    public int[] IntArray { get; set; } = new[] { -100, 1, 0, -1, 100 };
     public int[]? NullIntArray { get; set; } = null;
 
-    public TestObject<int, int>?[] TestObjectArray { get; set; } = new [] { new TestObject<int, int>(-100, 1), new TestObject<int, int>(0, -1), null };
+    public TestObject<int, int>?[] TestObjectArray { get; set; } = new[] { new TestObject<int, int>(-100, 1), new TestObject<int, int>(0, -1), null };
     public TestObject<int, int>?[]? NullTestObjectArray { get; set; } = null;
 
     public static void AssertAreEqual(

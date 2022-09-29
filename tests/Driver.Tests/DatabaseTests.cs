@@ -21,7 +21,7 @@ public abstract class DatabaseTestDriver<T>
         IResponse infoResp = await db.Info();
         AssertOk(infoResp);
 
-        IResponse signInStatus = await db.Signin(new{ user = TestHelper.User, pass = TestHelper.Pass, });
+        IResponse signInStatus = await db.Signin(new { user = TestHelper.User, pass = TestHelper.Pass, });
 
         AssertOk(signInStatus);
         //AssertOk(await db.Invalidate());
@@ -98,7 +98,7 @@ public abstract class DriverBase<T>
     where T : IDatabase, IDisposable, new() {
 
 
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public async Task TestSuite() {
         using var handle = await DbHandle<T>.Create();
         await Run(handle.Database);
