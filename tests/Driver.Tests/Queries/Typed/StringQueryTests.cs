@@ -12,7 +12,7 @@ public class RpcStringQueryTests : StringQueryTests<DatabaseRpc> {
 public abstract class StringQueryTests<T> : EqualityQueryTests<T, string, string>
     where T : IDatabase, IDisposable, new() {
 
-    private static IEnumerable<string> TestValues {
+    private static IEnumerable<string?> TestValues {
         get {
             yield return "Test";
             yield return "Test123";
@@ -25,17 +25,17 @@ public abstract class StringQueryTests<T> : EqualityQueryTests<T, string, string
         }
     }
 
-    public static IEnumerable<object[]> KeyAndValuePairs {
+    public static IEnumerable<object?[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomString(), e });
+            return TestValues.Select(e => new object?[] { RandomString(), e });
         }
     }
-    
-    public static IEnumerable<object[]> KeyPairs {
+
+    public static IEnumerable<object?[]> ValuePairs {
         get {
             foreach (var testValue1 in TestValues) {
                 foreach (var testValue2 in TestValues) {
-                    yield return new object[] { testValue1, testValue2 };
+                    yield return new object?[] { testValue1, testValue2 };
                 }
             }
         }

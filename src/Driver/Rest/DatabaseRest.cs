@@ -113,7 +113,7 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse>, IDisposable 
         if (value is null) {
             _vars.Remove(key);
         } else {
-            _vars[key] = ToJson(value);
+            _vars[key] = value;
         }
 
         return CompletedOk;
@@ -151,23 +151,17 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse>, IDisposable 
         return await Update(thing, ToJsonContent(data), ct);
     }
 
-    public async Task<RestResponse> Change(
-        Thing thing,
-        object data,
-        CancellationToken ct = default) {
-        // Is this the most optimal way?
-        string sql = "UPDATE $what MERGE $data RETURN AFTER";
-        Dictionary<string, object?> vars = new() { ["what"] = thing, ["data"] = data, };
-        return await Query(sql, vars, ct);
-    }
-
-    public async Task<RestResponse> Modify(
-        Thing thing,
-        object data,
-        CancellationToken ct = default) {
+    public async Task<RestResponse> Change(Thing thing, object data, CancellationToken ct = default) {
         HttpRequestMessage req = ToRequestMessage(HttpMethod.Patch, BuildRequestUri(thing), ToJson(data));
         HttpResponseMessage rsp = await _client.SendAsync(req, ct);
         return await rsp.ToSurreal();
+    }
+
+    public async Task<RestResponse> Modify(Thing thing, object[] patches, CancellationToken ct = default) {
+        // Is this the most optimal way?
+        string sql = "UPDATE $what PATCH $data RETURN DIFF";
+        Dictionary<string, object?> vars = new() { ["what"] = thing, ["data"] = patches, };
+        return await Query(sql, vars, ct);
     }
 
     public async Task<RestResponse> Delete(

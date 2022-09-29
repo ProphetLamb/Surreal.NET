@@ -7,7 +7,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
     protected abstract void AssertEquivalency(TValue a, TValue b);
 
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task AdditionQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! + (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
@@ -26,7 +26,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
     );
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task SubtractionQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! - (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
@@ -45,7 +45,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
     );
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task MultiplicationQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! * (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
@@ -64,7 +64,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
     );
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task DivisionQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var divisorIsZero = false;

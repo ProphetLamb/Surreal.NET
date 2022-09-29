@@ -26,7 +26,7 @@ public abstract class LongQueryTests <T> : MathQueryTests<T, long, long>
         }
     }
     
-    public static IEnumerable<object[]> KeyPairs {
+    public static IEnumerable<object[]> ValuePairs {
         get {
             foreach (var testValue1 in TestValues) {
                 foreach (var testValue2 in TestValues) {

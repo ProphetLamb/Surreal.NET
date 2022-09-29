@@ -10,7 +10,7 @@ namespace SurrealDB.Models;
 /// <summary>
 ///     The result of a successful query to the Surreal database.
 /// </summary>
-[DebuggerDisplay("{Inner},nq")]
+[DebuggerDisplay("{Inner,nq}")]
 public readonly struct Result : IEquatable<Result>, IComparable<Result> {
     private readonly JsonElement _json;
     private readonly object? _sentinelOrValue;

@@ -156,9 +156,9 @@ public sealed partial class DatabaseRpc : IDatabase<RpcResponse>, IDisposable {
     /// <inheritdoc />
     public async Task<RpcResponse> Modify(
         Thing thing,
-        object data,
+        object[] patches,
         CancellationToken ct = default) {
-        return await _client.Send(new() { method = "modify", parameters = new() { thing, data, }, }, ct).ToSurreal();
+        return await _client.Send(new() { method = "modify", parameters = new() { thing, patches, }, }, ct).ToSurreal();
     }
 
     /// <inheritdoc />

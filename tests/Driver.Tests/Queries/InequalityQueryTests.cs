@@ -4,7 +4,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
     where T : IDatabase, IDisposable, new() {
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task LessThanQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! < (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
@@ -23,7 +23,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
     );
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task LessThanOrEqualToQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! <= (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
@@ -42,7 +42,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
     );
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task GreaterThanQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! > (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
@@ -61,7 +61,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
     );
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task GreaterThanOrEqualToQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! >= (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic

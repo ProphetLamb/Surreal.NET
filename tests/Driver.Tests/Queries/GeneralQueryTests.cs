@@ -1,4 +1,6 @@
 using SurrealDB.Common;
+// ReSharper disable All
+#pragma warning disable CS0169
 
 namespace SurrealDB.Driver.Tests.Queries;
 public class RestGeneralQueryTests : GeneralQueryTests<DatabaseRest> { }
@@ -8,7 +10,6 @@ public class RpcGeneralQueryTests : GeneralQueryTests<DatabaseRpc> { }
 public abstract class GeneralQueryTests<T>
     where T : IDatabase, IDisposable, new() {
 
-    TestDatabaseFixture? fixture;
 
     private record GroupedCountries {
         string? country;
@@ -117,7 +118,7 @@ GROUP BY country;";
             Assert.True(response.TryGetResult(out Result result));
             MathResultDocument? doc = result.GetObject<MathResultDocument>();
             Assert.NotNull(doc);
-            doc.result.Should().BeApproximately(expectedResult.result, 0.000001f);
+            doc!.result.Should().BeApproximately(expectedResult.result, 0.000001f);
         }
     );
 
@@ -139,7 +140,7 @@ GROUP BY country;";
             Assert.True(response.TryGetResult(out Result result));
             MathResultDocument? doc = result.GetObject<MathResultDocument>();
             Assert.NotNull(doc);
-            doc.result.Should().BeApproximately(expectedResult.result, 0.001f);
+            doc!.result.Should().BeApproximately(expectedResult.result, 0.001f);
         }
     );
 

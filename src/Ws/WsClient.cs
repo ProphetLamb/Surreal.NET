@@ -1,5 +1,5 @@
-using System.Buffers;
-using System.Net.WebSockets;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -14,18 +14,16 @@ namespace SurrealDB.Ws;
 ///     The client used to connect to the Surreal server via JSON RPC.
 /// </summary>
 public sealed class WsClient : IDisposable, IAsyncDisposable {
-    const int FRAME_SIZE = 4096;
     private static readonly Lazy<RecyclableMemoryStreamManager> s_manager = new(static () => new());
-
     // Do not get any funny ideas and fill this fucker up.
     public static readonly List<object?> EmptyList = new();
 
-    private ClientWebSocket? _ws;
+    private readonly Ws _ws = new();
 
     /// <summary>
     ///     Indicates whether the client is connected or not.
     /// </summary>
-    public bool Connected => _ws is not null && _ws.State == WebSocketState.Open;
+    public bool Connected => _ws.Connected;
 
     /// <summary>
     ///     Generates a random base64 string of the length specified.
@@ -39,53 +37,32 @@ public sealed class WsClient : IDisposable, IAsyncDisposable {
     /// <summary>
     ///     Opens the connection to the Surreal server.
     /// </summary>
-    public async Task Open(
-        Uri url,
-        CancellationToken ct = default) {
+    public async Task Open(Uri url, CancellationToken ct = default) {
         ThrowIfConnected();
-        try {
-            _ws = new ClientWebSocket();
-            await _ws.ConnectAsync(url, ct);
-        } catch {
-            // Clean state
-            _ws?.Dispose();
-            _ws = null;
-            throw;
-        }
+        await _ws.Open(url, ct);
     }
 
     /// <summary>
     ///     Closes the connection to the Surreal server.
     /// </summary>
     public async Task Close(CancellationToken ct = default) {
-        if (_ws is null) {
-            return;
-        }
-
-        await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client closed", ct);
-        _ws.Dispose();
-        _ws = null;
+        await _ws.Close(ct);
     }
 
     /// <inheritdoc cref="IDisposable" />
     public void Dispose() {
-        if (_ws is not null) {
-            Close().Wait();
-        }
+        _ws.Dispose();
     }
 
     /// <inheritdoc cref="IAsyncDisposable" />
     public ValueTask DisposeAsync() {
-        return _ws is null ? default : new(Close());
+        return _ws.DisposeAsync();
     }
 
     /// <summary>
     ///     Sends the specified request to the Surreal server, and returns the response.
     /// </summary>
-    /// <param name="req"> The request to send </param>
-    public async Task<Response> Send(
-        Request req,
-        CancellationToken ct = default) {
+    public async Task<Response> Send(Request req, CancellationToken ct = default) {
         ThrowIfDisconnected();
         req.id ??= GetRandomId(6);
         req.parameters ??= EmptyList;
@@ -96,37 +73,24 @@ public sealed class WsClient : IDisposable, IAsyncDisposable {
         // Now Position = Length = EndOfMessage
         // Write the buffer to the websocket
         stream.Position = 0;
-        await SendStream(_ws!, stream, ct);
-        // Reset the Position and Length
-        // Read the response from the websocket
-        stream.Position = 0;
-        stream.SetLength(0);
-        await ReceiveStream(_ws!, stream, ct);
-        // Read the buffer to json DOM
-        stream.Position = 0;
-        Response rsp = await JsonSerializer.DeserializeAsync<Response>(stream, SerializerOptions.Shared, ct);
-        return rsp;
-    }
-
-    private static async Task SendStream(WebSocket ws, Stream stream, CancellationToken ct) {
-        using IMemoryOwner<byte> frame = MemoryPool<byte>.Shared.Rent(FRAME_SIZE);
-        int read;
-        while ((read = stream.Read(frame.Memory.Span)) > 0) {
-            await ws.SendAsync(frame.Memory.Slice(0, read), WebSocketMessageType.Text, IsLastFrame(stream, FRAME_SIZE), ct);
+        var (rsp, nty, stm) = await _ws.RequestOnce(req.id, stream, ct);
+        if (!nty.IsDefault) {
+            ThrowExpectRspGotNty();
         }
+
+        if (rsp.IsDefault) {
+            ThrowRspDefault();
+        }
+
+        var bdy = await JsonSerializer.DeserializeAsync<JsonDocument>(stm, SerializerOptions.Shared, ct);
+        if (bdy is null) {
+            ThrowRspDefault();
+        }
+        return new(rsp.id, rsp.err, ExtractResult(bdy));
     }
 
-    private static async Task ReceiveStream(WebSocket ws, Stream stream, CancellationToken ct) {
-        using IMemoryOwner<byte> frame = MemoryPool<byte>.Shared.Rent(FRAME_SIZE);
-        ValueWebSocketReceiveResult res;
-        do {
-            res = await ws.ReceiveAsync(frame.Memory, ct);
-            await stream.WriteAsync(frame.Memory.Slice(0, res.Count), ct);
-        } while (!res.EndOfMessage);
-    }
-
-    private static bool IsLastFrame(Stream stream, long frameSize) {
-        return stream.Position + frameSize >= stream.Length;
+    private static JsonElement ExtractResult(JsonDocument root) {
+        return root.RootElement.TryGetProperty("result", out JsonElement res) ? res : default;
     }
 
     private void ThrowIfDisconnected() {
@@ -141,6 +105,16 @@ public sealed class WsClient : IDisposable, IAsyncDisposable {
         }
     }
 
+    [DoesNotReturn]
+    private static void ThrowExpectRspGotNty() {
+        throw new InvalidOperationException("Expected a response, got a notification");
+    }
+
+    [DoesNotReturn]
+    private static void ThrowRspDefault() {
+        throw new InvalidOperationException("Invalid response");
+    }
+
     public record struct Request(
         string? id,
         [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault),]
@@ -148,7 +122,6 @@ public sealed class WsClient : IDisposable, IAsyncDisposable {
         string? method,
         [property: JsonPropertyName("params"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault),]
         List<object?>? parameters);
-
 
     public readonly record struct Response(
         string? id,

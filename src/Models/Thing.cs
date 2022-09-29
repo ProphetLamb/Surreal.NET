@@ -14,7 +14,7 @@ namespace SurrealDB.Models;
 ///     `table_name:record_id`
 /// </remarks>
 [JsonConverter(typeof(Converter))]
-[DebuggerDisplay("{Inner},nq")]
+[DebuggerDisplay("{Inner,nq}")]
 public readonly record struct Thing {
     public const char CHAR_SEP = ':';
     public const char CHAR_PRE = '⟨';

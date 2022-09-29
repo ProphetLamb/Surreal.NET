@@ -119,13 +119,13 @@ public interface IDatabase<TResponse>
     ///     Applies  <see href="https://jsonpatch.com/"> JSON Patch </see> changes to all records, or a specific record, in the database.
     /// </summary>
     /// <param name="thing"> The table name or the specific record id to update. </param>
-    /// <param name="data"> The JSON Patch data with which to modify the records. </param>
+    /// <param name="patches"> The JSON Patch data with which to modify the records. </param>
     /// <remarks>
     ///     This function patches the current document / record data with the specified JSON Patch data.
     ///     This function will run the following query in the database:
     ///     <code>UPDATE $thing PATCH $data;</code>
     /// </remarks>
-    public new Task<TResponse> Modify(Thing thing, object data, CancellationToken ct = default);
+    public new Task<TResponse> Modify(Thing thing, object[] patches, CancellationToken ct = default);
 
     /// <summary>
     ///     Deletes all records in a table, or a specific record, from the database.
@@ -222,7 +222,7 @@ public interface IDatabase {
     /// <param name="sql"> Specifies the SurrealQL statements. </param>
     /// <param name="vars"> Assigns variables which can be used in the query. </param>
     /// <param name="ct"> </param>
-    public Task<IResponse> Query(string sql, IReadOnlyDictionary<string, object?>? vars, CancellationToken ct = default);
+    public Task<IResponse> Query(string sql, IReadOnlyDictionary<string, object?>? vars = null, CancellationToken ct = default);
 
     /// <summary>
     ///     Selects all records in a table, or a specific record, from the database.
@@ -279,7 +279,7 @@ public interface IDatabase {
     ///     This function will run the following query in the database:
     ///     <code>UPDATE $thing PATCH $data;</code>
     /// </remarks>
-    public Task<IResponse> Modify(Thing thing, object data, CancellationToken ct = default);
+    public Task<IResponse> Modify(Thing thing, object[] data, CancellationToken ct = default);
 
     /// <summary>
     ///     Deletes all records in a table, or a specific record, from the database.

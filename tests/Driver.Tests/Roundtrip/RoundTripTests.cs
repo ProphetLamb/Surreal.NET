@@ -12,7 +12,6 @@ public class RestRoundTripTests : RoundTripTests<DatabaseRest> {
 public abstract class RoundTripTests<T>
     where T : IDatabase, IDisposable, new() {
 
-    TestDatabaseFixture? fixture;
 
     protected RoundTripObject Expected = new();
 

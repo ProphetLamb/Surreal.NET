@@ -52,8 +52,8 @@ public sealed partial class DatabaseRpc : IDatabase {
         return await Change(thing, data, ct);
     }
 
-    async Task<IResponse> IDatabase.Modify(Thing thing, object data, CancellationToken ct) {
-        return await Modify(thing, data, ct);
+    async Task<IResponse> IDatabase.Modify(Thing thing, object[] patches, CancellationToken ct) {
+        return await Modify(thing, patches, ct);
     }
 
     async Task<IResponse> IDatabase.Delete(Thing thing, CancellationToken ct) {

@@ -95,7 +95,6 @@ public abstract class DatabaseTestDriver<T>
 public abstract class DriverBase<T>
     where T : IDatabase, IDisposable, new() {
 
-    TestDatabaseFixture? fixture;
 
     [Fact]
     public async Task TestSuite() {

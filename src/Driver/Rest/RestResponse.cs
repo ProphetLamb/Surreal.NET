@@ -12,7 +12,7 @@ namespace SurrealDB.Driver.Rest;
 /// <summary>
 ///     The response from a query to the Surreal database via rest.
 /// </summary>
-[DebuggerDisplay("{ToString},nq")]
+[DebuggerDisplay("{ToString,nq}")]
 public readonly struct RestResponse : IResponse {
     private readonly string? _status;
     private readonly string? _detail;

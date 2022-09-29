@@ -4,7 +4,7 @@ public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, 
     where T : IDatabase, IDisposable, new() {
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task EqualsQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! == (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic
@@ -23,7 +23,7 @@ public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, 
     );
     
     [Theory]
-    [MemberData("KeyPairs")]
+    [MemberData("ValuePairs")]
     public async Task NotEqualsQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
         async db => {
             var expectedResult = (dynamic)val1! != (dynamic)val2!; // Can't do operator overloads on generic types, so force it by casting to a dynamic

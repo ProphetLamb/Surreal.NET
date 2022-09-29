@@ -27,7 +27,7 @@ public abstract class TimeOnlyQueryTests<T> : InequalityQueryTests<T, int, TimeO
         }
     }
     
-    public static IEnumerable<object[]> KeyPairs {
+    public static IEnumerable<object[]> ValuePairs {
         get {
             foreach (var testValue1 in TestValues) {
                 foreach (var testValue2 in TestValues) {

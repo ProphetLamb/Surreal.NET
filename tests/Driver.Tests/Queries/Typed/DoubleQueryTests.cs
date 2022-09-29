@@ -26,7 +26,7 @@ public abstract class DoubleQueryTests <T> : MathQueryTests<T, double, double>
         }
     }
     
-    public static IEnumerable<object[]> KeyPairs {
+    public static IEnumerable<object[]> ValuePairs {
         get {
             foreach (var testValue1 in TestValues) {
                 foreach (var testValue2 in TestValues) {

@@ -12,3 +12,12 @@ public class TestObject<TKey, TValue> {
     public TKey Key { get; set; }
     public TValue Value { get; set; }
 }
+
+public class ExtendedTestObject<TKey, TValue> : TestObject<TKey, TValue> {
+    [JsonConstructor]
+    public ExtendedTestObject(TKey key, TValue value, TValue mergeValue) : base (key, value) {
+        MergeValue = mergeValue;
+    }
+    
+    public TValue MergeValue { get; set; }
+}

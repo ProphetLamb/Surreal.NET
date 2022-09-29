@@ -7,7 +7,6 @@ public class RpcResultTests : ResultTests<DatabaseRpc> { }
 public abstract class ResultTests<T>
     where T : IDatabase, IDisposable, new() {
 
-    TestDatabaseFixture? fixture;
 
     [Theory]
     [InlineData((int)1)]

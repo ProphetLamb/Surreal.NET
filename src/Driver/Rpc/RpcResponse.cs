@@ -11,7 +11,7 @@ namespace SurrealDB.Driver.Rpc;
 /// <summary>
 ///     The response from a query to the Surreal database via rpc.
 /// </summary>
-[DebuggerDisplay("{ToString()},nq")]
+[DebuggerDisplay("{ToString(),nq}")]
 public readonly struct RpcResponse : IResponse {
     private readonly Error _error;
 

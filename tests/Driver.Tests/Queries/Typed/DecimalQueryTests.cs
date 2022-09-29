@@ -26,7 +26,7 @@ public abstract class DecimalQueryTests <T> : MathQueryTests<T, decimal, decimal
         }
     }
     
-    public static IEnumerable<object[]> KeyPairs {
+    public static IEnumerable<object[]> ValuePairs {
         get {
             foreach (var testValue1 in TestValues) {
                 foreach (var testValue2 in TestValues) {
