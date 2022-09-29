@@ -53,7 +53,7 @@ public sealed partial class DatabaseRpc : IDatabase<RpcResponse>, IDisposable {
     /// <param name="ct"> </param>
     /// <inheritdoc />
     public async Task<RpcResponse> Info(CancellationToken ct) {
-        return await _client.Send(new() { method = "info", }).ToSurreal();
+        return await _client.Send(new() { method = "info", }, ct).ToSurreal();
     }
 
     /// <inheritdoc />
