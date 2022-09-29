@@ -52,7 +52,6 @@ public abstract class GeneralQueryTests<T>
         }
     );
 
-    [Fact(Skip = "Blocked by https://github.com/ProphetLamb/Surreal.Net/issues/20")]
     public async Task CountAndGroupQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = @"SELECT
@@ -195,11 +194,11 @@ GROUP BY country;";
         var createResponse = await db.Create(thing, expectedResult).ConfigureAwait(false);
         AssertResponse(createResponse, expectedResult);
         Logger.WriteLine($"Create {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
-        
+
         var selectResponse = await db.Select(thing).ConfigureAwait(false);
         AssertResponse(selectResponse, expectedResult);
         Logger.WriteLine($"Select {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
-        
+
         string sql = "SELECT * FROM $record";
         Dictionary<string, object?> param = new() { ["record"] = thing };
         var queryResponse = await db.Query(sql, param).ConfigureAwait(false);

@@ -81,7 +81,7 @@ public abstract class RoundTripTests<T>
 public class RoundTripObject {
 
     public string String { get; set; } = "A String";
-    // public string MultiLineString { get; set; } = "A\nString"; // Fails to write to DB
+    public string MultiLineString { get; set; } = "A\nString"; // Fails to write to DB
     public string UnicodeString { get; set; } = "A ❤️";
     public string EmptyString { get; set; } = "";
     public string? NullString { get; set; } = null;

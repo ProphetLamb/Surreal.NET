@@ -57,11 +57,9 @@ public abstract class ResultTests<T>
     [InlineData(float.Epsilon)]
     [InlineData(float.MaxValue)]
     [InlineData(float.MinValue)]
-    // Disable test which can currently not be handled
-    // TODO: verify with a newer version of SurrealDB what works, and what need to be adapted.
-    // [InlineData(float.PositiveInfinity)]
-    // [InlineData(float.NegativeInfinity)]
-    // [InlineData(float.NaN)]
+    [InlineData(float.PositiveInfinity)]
+    [InlineData(float.NegativeInfinity)]
+    [InlineData(float.NaN)]
     public async Task FloatTryGetValueQueryTest(float expectedValue) => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = "select * from <float>($value)";
@@ -81,14 +79,12 @@ public abstract class ResultTests<T>
     [InlineData((double)1.1)]
     [InlineData((double)0)]
     [InlineData((double)-1.1)]
-    // Disable test which can currently not be handled
-    // TODO: verify with a newer version of SurrealDB what works, and what need to be adapted.
-    // [InlineData(double.Epsilon)]
-    // [InlineData(double.MaxValue)]
-    // [InlineData(double.MinValue)]
-    // [InlineData(double.PositiveInfinity)]
-    // [InlineData(double.NegativeInfinity)]
-    // [InlineData(double.NaN)]
+    [InlineData(double.Epsilon)]
+    [InlineData(double.MaxValue)]
+    [InlineData(double.MinValue)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    [InlineData(double.NaN)]
     public async Task DoubleTryGetValueQueryTest(double expectedValue) => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = "select * from <float>($value)";
