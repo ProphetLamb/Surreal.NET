@@ -1,0 +1,67 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@using BlazorSurveys.Shared
+@inject SurveyHttpClient SurveyHttpClient
+@inject NavigationManager NavigationManager
+@inject HubConnection HubConnection
+@implements IDisposable
+
+<h1 class="mb-4">Real-Time surveys with Blazor and SignalR</h1>
+
+<button class="btn btn-primary mb-4" @onclick="AddSurvey"><i class="oi oi-plus" /> Add Survey</button>
+
+@if (surveys == null)
+{
+    <p><em>Loading...</em></p>
+} else {
+  <div class="row row-cols-1 row-cols-md-2">
+    @foreach (SurveySummary survey in surveys.OrderBy(s => s.ExpiresAt))
+    {
+      <div class="col mb-4">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">@survey.Title</h5>
+
+            <button class="btn btn-link pl-0" @onclick="@(() => GoToSurvey(survey.Id))">View survey</button>
+            <SurveyExpiration Expirable=survey class="card-text float-right" />
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+@code {
+    private SurveySummary[] surveys;
+
+    protected override async Task OnInitializedAsync()
+    {
+        surveys = await SurveyHttpClient.GetSurveys();
+        HubConnection.On<SurveySummary>("SurveyAdded", survey =>
+        {
+            surveys = surveys
+                .Where(s => s.Title != survey.Title)
+                .Append(survey)
+                .ToArray();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        HubConnection.Remove("SurveyAdded");
+    }
+
+    private void AddSurvey()
+    {
+        NavigationManager.NavigateTo("add-survey");
+    }
+
+    private void GoToSurvey(Guid surveyId)
+    {
+        NavigationManager.NavigateTo($"survey-details/{surveyId}");
+    }
+
+}

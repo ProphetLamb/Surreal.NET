@@ -1,0 +1,35 @@
+@using BlazorSurveys.Shared
+@using System.Threading
+
+<p @attributes="ExtraAttributes">
+    @if (Expirable.IsExpired){
+        <strong>This survey has already expired!</strong>
+    } else if(Expirable.ExpiresInMin > 2) {
+        <small class="text-muted">Expires in @Expirable.ExpiresInMin min</small>
+    } else {
+        <small class="text-muted">Expires in @Expirable.ExpiresInSec sec</small>
+    }
+</p>
+
+@code {
+    [Parameter]
+    public IExpirable Expirable { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> ExtraAttributes { get; set; }
+
+    private Timer timer;
+
+    protected override void OnInitialized()
+    {
+    // In order to update the expiration time, refresh UX every second
+        timer = new Timer((object stateInfo) =>
+        {
+            StateHasChanged();
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await timer.DisposeAsync();
+    }
+}
