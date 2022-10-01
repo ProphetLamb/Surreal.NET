@@ -19,7 +19,7 @@ public abstract class StringQueryTests<T> : EqualityQueryTests<T, string, string
             yield return "Test 123";
             yield return "Test-123";
             yield return "Test_123";
-            //yield return "Test\n123";
+            yield return "Test\n123";
             yield return "";
             yield return null;
         }

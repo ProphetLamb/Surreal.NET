@@ -7,4 +7,9 @@ public static class RestClientExtensions {
     public static Task<RestResponse> ToSurreal(this HttpResponseMessage msg) {
         return RestResponse.From(msg);
     }
+
+    [DebuggerStepThrough]
+    public static Task<RestResponse> ToSurrealFromSignin(this HttpResponseMessage msg) {
+        return RestResponse.FromSignin(msg);
+    }
 }
