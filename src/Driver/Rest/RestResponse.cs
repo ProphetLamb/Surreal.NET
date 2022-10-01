@@ -73,6 +73,34 @@ public readonly struct RestResponse : IResponse {
     }
 
     /// <summary>
+    /// Parses a signing <see cref="HttpResponseMessage"/> containing JSON to a <see cref="RestResponse"/>.
+    /// </summary>
+    public static async Task<RestResponse> FromSignin(
+        HttpResponseMessage msg,
+        CancellationToken ct = default) {
+        
+        // Signin returns a different object to the other response
+        // And for that reason needs it's on deserialization path
+        // The whole response is ultimately shoved into the RestResponse.Success.result field
+        // {"code":200,"details":"Authentication succeeded","token":""}
+
+#if NET6_0_OR_GREATER
+        Stream stream = await msg.Content.ReadAsStreamAsync(ct);
+#else
+        Stream stream = await msg.Content.ReadAsStreamAsync();
+#endif
+        if (msg.StatusCode != HttpStatusCode.OK) {
+            Error? err = await JsonSerializer.DeserializeAsync<Error>(stream, SerializerOptions.Shared, ct);
+            return From(err);
+        }
+
+        JsonElement jsonElement = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions.Shared, ct);
+        Success doc = new ("", "OK", jsonElement);
+
+        return From(doc);
+    }
+
+    /// <summary>
     /// Parses a <see cref="HttpResponseMessage"/> containing JSON to a <see cref="RestResponse"/>.
     /// </summary>
     public static async Task<RestResponse> From(

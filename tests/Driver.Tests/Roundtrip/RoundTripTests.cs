@@ -131,25 +131,31 @@ public class RoundTripObject {
     public decimal MinDecimal { get; set; } = decimal.MinValue;
     public decimal? NullDecimal { get; set; } = null;
 
-    public DateTime MaxUtcDateTime { get; set; } = DateTime.MaxValue.AsUtc();
+    private static readonly DateTime s_dateTime = new (2012, 6, 12, 10, 5, 32, 648, DateTimeKind.Utc);
+    //public DateTime MaxUtcDateTime { get; set; } = DateTime.MaxValue.AsUtc();
     public DateTime MinUtcDateTime { get; set; } = DateTime.MinValue.AsUtc();
-    public DateTime NowUtcDateTime { get; set; } = DateTime.UtcNow;
+    public DateTime UtcDateTime { get; set; } = s_dateTime;
     public DateTime? NullDateTime { get; set; } = null;
 
-    public DateTimeOffset MaxUtcDateTimeOffset { get; set; } = DateTimeOffset.MaxValue.ToUniversalTime();
+    //public DateTimeOffset MaxUtcDateTimeOffset { get; set; } = DateTimeOffset.MaxValue.ToUniversalTime();
     public DateTimeOffset MinUtcDateTimeOffset { get; set; } = DateTimeOffset.MinValue.ToUniversalTime();
-    public DateTimeOffset NowUtcDateTimeOffset { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset UtcDateTimeOffset { get; set; } = new (s_dateTime);
     public DateTimeOffset? NullDateTimeOffset { get; set; } = null;
 
-    public DateOnly MaxUtcDateOnly { get; set; } = DateOnly.MaxValue;
+    //public DateOnly MaxUtcDateOnly { get; set; } = DateOnly.MaxValue;
     public DateOnly MinUtcDateOnly { get; set; } = DateOnly.MinValue;
-    public DateOnly NowUtcDateOnly { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+    public DateOnly UtcDateOnly { get; set; } = DateOnly.FromDateTime(s_dateTime);
     public DateOnly? NullUtcDateOnly { get; set; } = null;
 
-    public TimeOnly MaxUtcTimeOnly { get; set; } = TimeOnly.MaxValue;
+    //public TimeOnly MaxUtcTimeOnly { get; set; } = TimeOnly.MaxValue;
     public TimeOnly MinUtcTimeOnly { get; set; } = TimeOnly.MinValue;
-    public TimeOnly NowUtcTimeOnly { get; set; } = TimeOnly.FromDateTime(DateTime.UtcNow);
+    public TimeOnly UtcTimeOnly { get; set; } = TimeOnly.FromDateTime(s_dateTime);
     public TimeOnly? NullUtcTimeOnly { get; set; } = null;
+
+    //public TimeSpan MaxTimeSpan { get; set; } = TimeSpan.MaxValue;
+    //public TimeSpan MinTimeSpan { get; set; } = TimeSpan.MinValue;
+    public TimeSpan TimeSpan { get; set; } = new (200, 20, 34, 41, 265);
+    public TimeSpan? NullTimeSpan { get; set; } = null;
 
     public Guid Guid { get; set; } = Guid.NewGuid();
     public Guid EmptyGuid { get; set; } = Guid.Empty;

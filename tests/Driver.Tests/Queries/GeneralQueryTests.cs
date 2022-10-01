@@ -52,6 +52,7 @@ public abstract class GeneralQueryTests<T>
         }
     );
 
+    [Fact]
     public async Task CountAndGroupQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = @"SELECT

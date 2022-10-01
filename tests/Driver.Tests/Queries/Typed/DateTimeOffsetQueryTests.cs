@@ -13,8 +13,8 @@ public abstract class DateTimeOffsetQueryTests<T> : InequalityQueryTests<T, int,
 
     private static IEnumerable<DateTimeOffset> TestValues {
         get {
-            //yield return new DateTimeOffset(2012, 6, 12, 10, 5, 32, 648, TimeSpan.Zero);
-            yield return DateTimeOffset.MaxValue.ToUniversalTime();
+            yield return new DateTimeOffset(2012, 6, 12, 10, 5, 32, 648, TimeSpan.Zero);
+            //yield return DateTimeOffset.MaxValue.ToUniversalTime();
             yield return DateTimeOffset.MinValue.ToUniversalTime();
         }
     }
@@ -43,8 +43,8 @@ public abstract class DateTimeOffsetQueryTests<T> : InequalityQueryTests<T, int,
         var minDate = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var maxDate = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var diff = (maxDate - minDate).TotalMicroseconds();
-        var randomeDateTime = minDate.AddMicroseconds((long)(ThreadRng.Shared.NextDouble() * diff));
-        return randomeDateTime;
+        var randomDateTime = minDate.AddMicroseconds((long)(ThreadRng.Shared.NextDouble() * diff));
+        return randomDateTime;
     }
 
     public DateTimeOffsetQueryTests(ITestOutputHelper logger) : base(logger) {

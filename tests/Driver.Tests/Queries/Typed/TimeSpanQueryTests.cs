@@ -14,7 +14,7 @@ public abstract class TimeSpanQueryTests<T> : InequalityQueryTests<T, int, TimeS
     private static IEnumerable<TimeSpan> TestValues {
         get {
             yield return new TimeSpan(1, 2, 3, 4, 5);
-            yield return new TimeSpan(200, 20, 34, 41, 65);
+            yield return new TimeSpan(200, 20, 34, 41, 265);
             yield return TimeSpan.Zero;
         }
     }

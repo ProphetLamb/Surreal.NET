@@ -28,13 +28,10 @@ public static class SerializerOptions {
             ReadCommentHandling = JsonCommentHandling.Skip,
             WriteIndented = false,
             NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.AllowNamedFloatingPointLiterals,
-            // This was throwing an exception when set to JsonIgnoreCondition.Always
-            DefaultIgnoreCondition = JsonIgnoreCondition.Never,
             // TODO: Remove this when the server is fixed, see: https://github.com/surrealdb/surrealdb/issues/137
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            IgnoreReadOnlyProperties = false,
             UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
-            Converters = { new JsonStringEnumConverter(), new DecimalConv(), new DoubleConv(), new SingleConv(), new DateTimeConv() , new DateTimeOffsetConv(), new TimeSpanConv(), new TimeOnlyConv(), new DateOnlyConv() },
+            Converters = { new JsonStringEnumConverter(), new DecimalConv(), new DoubleConv(), new SingleConv(), new DateTimeConv(), new DateTimeOffsetConv(), new TimeSpanConv(), new TimeOnlyConv(), new DateOnlyConv() },
         };
     }
 }

@@ -2,7 +2,7 @@
 	<Import Project="..\Directory.Build.props" />
 
 	<PropertyGroup>
-		<Version>1.0.6</Version>
+		<Version>1.0.7</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 	</PropertyGroup>
 
