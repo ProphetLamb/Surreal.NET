@@ -52,7 +52,7 @@ public abstract class GeneralQueryTests<T>
         }
     );
 
-    [Fact(Skip = "Blocked by https://github.com/ProphetLamb/Surreal.Net/issues/20")]
+    [Fact]
     public async Task CountAndGroupQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = @"SELECT

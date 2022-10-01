@@ -90,7 +90,7 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         CancellationToken ct = default) {
         // SetAuth(auth.Username, auth.Password);
         HttpResponseMessage rsp = await _client.PostAsync("signin", ToJsonContent(auth), ct);
-        return await rsp.ToSurreal();
+        return await rsp.ToSurrealFromSignin();
     }
 
     public Task<RestResponse> Invalidate(CancellationToken ct = default) {
