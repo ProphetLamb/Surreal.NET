@@ -38,6 +38,120 @@ public abstract class GeneralQueryTests<T>
     }
 
     [Fact]
+    public async Task StopStartConnectionTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            string sql = "INFO FOR DB;";
+            var response = await db.Query(sql, null);
+            Assert.NotNull(response);
+            TestHelper.AssertOk(response);
+
+            await db.Close();
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await db.Query(sql, null));
+            db.Dispose();
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await db.Query(sql, null));
+
+            db = new();
+            await db.Open(TestHelper.Default);
+            
+            response = await db.Query(sql, null);
+            Assert.NotNull(response);
+            TestHelper.AssertOk(response);
+        }
+    );
+
+    [Fact]
+    public async Task SwitchDatabaseTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            var nsName = db.GetConfig().Namespace!;
+            var originalDbName = db.GetConfig().Database!;
+            var otherDbName = "DifferentDb";
+
+            TestObject<int, string> expectedOriginalObject = new(1, originalDbName);
+            TestObject<int, string> expectedOtherObject = new(1, otherDbName);
+            
+            Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
+            await db.Create(thing, expectedOriginalObject);
+
+            {
+                var useResponse = await db.Use(otherDbName, nsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+
+                await db.Create(thing, expectedOtherObject);
+
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOtherObject);
+            }
+
+            {
+                var useResponse = await db.Use(originalDbName, nsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+                
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOriginalObject);
+            }
+
+        }
+    );
+
+    [Fact]
+    public async Task SwitchNamespaceTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            var originalNsName = db.GetConfig().Namespace!;
+            var otherNsName = "DifferentNs";
+            var dbName = db.GetConfig().Database!;
+
+            TestObject<int, string> expectedOriginalObject = new(1, originalNsName);
+            TestObject<int, string> expectedOtherObject = new(1, otherNsName);
+            
+            Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
+            await db.Create(thing, expectedOriginalObject);
+
+            {
+                var useResponse = await db.Use(dbName, otherNsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+
+                await db.Create(thing, expectedOtherObject);
+
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOtherObject);
+            }
+
+            {
+                var useResponse = await db.Use(dbName, originalNsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOriginalObject);
+            }
+
+        }
+    );
+
+    [Fact]
     public async Task SimpleFuturesQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = "select * from <future> { time::now() };";

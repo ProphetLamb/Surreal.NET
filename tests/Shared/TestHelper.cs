@@ -36,4 +36,16 @@ public static class TestHelper {
         Exception ex = new($"Expected Ok, got error code {err.Code} ({err.Message}) in {caller}");
         throw ex;
     }
+
+    public static void AssertError(
+        in IResponse rpcResponse,
+        // [CallerArgumentExpression("rpcResponse")]
+        string caller = "") {
+        if (rpcResponse.TryGetError(out Error err)) {
+            return;
+        }
+
+        Exception ex = new($"Expected Error, got ok response in {caller}");
+        throw ex;
+    }
 }

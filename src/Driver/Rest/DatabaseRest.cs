@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -22,6 +22,23 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     private static Task<RestResponse> CompletedOk => Task.FromResult(RestResponse.EmptyOk);
 
     private readonly Dictionary<string, object?> _vars = new();
+
+    private const string NAMESPACE = "NS";
+    private const string DATABASE = "DB";
+
+    /// <summary>
+    ///     Indicates whether the client has valid connection details.
+    /// </summary>
+    public bool InvalidConnectionDetails =>
+        _client.DefaultRequestHeaders.Contains(NAMESPACE) &&
+        _client.DefaultRequestHeaders.Contains(DATABASE) &&
+        _client.DefaultRequestHeaders.Authorization != null;
+
+    private void ThrowIfInvalidConnection() {
+        if (!InvalidConnectionDetails) {
+            throw new InvalidOperationException("The connection details is invalid.");
+        }
+    }
 
     public void Dispose() {
         _client.Dispose();
@@ -60,6 +77,7 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     }
 
     public Task Close(CancellationToken ct = default) {
+        Invalidate(ct);
         return Task.CompletedTask;
     }
 
@@ -71,8 +89,8 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     }
 
     public Task<RestResponse> Use(
-        string db,
-        string ns,
+        string? db,
+        string? ns,
         CancellationToken ct = default) {
         SetUse(db, ns);
 
@@ -199,13 +217,17 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     private void SetUse(
         string? db,
         string? ns) {
-        _config.Database = db;
-        _config.Namespace = ns;
+        if (db != null) {
+            _config.Database = db;
+            _client.DefaultRequestHeaders.Remove(DATABASE);
+            _client.DefaultRequestHeaders.Add(DATABASE, db);
+        }
 
-        _client.DefaultRequestHeaders.Remove("DB");
-        _client.DefaultRequestHeaders.Add("DB", db);
-        _client.DefaultRequestHeaders.Remove("NS");
-        _client.DefaultRequestHeaders.Add("NS", ns);
+        if (ns != null) {
+            _config.Namespace = ns;
+            _client.DefaultRequestHeaders.Remove(NAMESPACE);
+            _client.DefaultRequestHeaders.Add(NAMESPACE, ns);
+        }
     }
 
     /// <inheritdoc cref="Signup(Authentication, CancellationToken)" />

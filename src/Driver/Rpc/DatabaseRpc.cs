@@ -1,4 +1,4 @@
-﻿using SurrealDB.Abstractions;
+using SurrealDB.Abstractions;
 using SurrealDB.Configuration;
 using SurrealDB.Models;
 using SurrealDB.Ws;
@@ -33,6 +33,7 @@ public sealed partial class DatabaseRpc : IDatabase<RpcResponse> {
             return;
         }
         _config.ThrowIfInvalid();
+
         _configured = true;
 
         // Open connection
@@ -47,13 +48,14 @@ public sealed partial class DatabaseRpc : IDatabase<RpcResponse> {
     }
 
     public async Task Close(CancellationToken ct = default) {
+        _configured = false;
         await _client.Close(ct);
     }
 
     /// <param name="ct"> </param>
     /// <inheritdoc />
     public async Task<RpcResponse> Info(CancellationToken ct) {
-        return await _client.Send(new() { method = "info", }).ToSurreal();
+        return await _client.Send(new() { method = "info", }, ct).ToSurreal();
     }
 
     /// <inheritdoc />
