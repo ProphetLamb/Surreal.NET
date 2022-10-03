@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup Condition="$(Configuration)=='Release'">
+		<PackageReference Include="SurrealDB.Extensions.Service" Version="1.0.2" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(Configuration)!='Release'">
+		<ProjectReference Include="..\..\src\Extensions\Service\Service.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Polly" Version="7.2.3" />
+	  <PackageReference Include="Sharprompt" Version="2.4.4" />
+	</ItemGroup>
+
+</Project>

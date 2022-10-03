@@ -1,0 +1,106 @@
+@page "/add-survey"
+@using BlazorSurveys.Shared
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Logging
+@inject SurveyHttpClient SurveyHttpClient
+@inject NavigationManager NavigationManager
+@inject ILogger<AddSurvey> Logger
+
+<EditForm EditContext="@editContext" OnSubmit="@OnSubmit">
+  @* Use the experimental ObjectGraphDataAnnotationsValidator which allows to validate complex nested models *@
+  @* <DataAnnotationsValidator /> *@
+  <ObjectGraphDataAnnotationsValidator />
+  <div class="@(editContext.GetValidationMessages().Any() ? "alert alert-danger pb-0" : "")">
+    <ValidationSummary />
+  </div>
+
+  <div class="form-group">
+    <label for="inputTitle">Title</label>
+    <InputText id="inputTitle" class="form-control" @bind-Value="survey.Title" />
+    @if(editContext.GetValidationMessages(() => survey.Title).Any()){
+      <div class="invalid-feedback">
+        @editContext.GetValidationMessages(() => survey.Title).First()
+      </div>
+    }
+  </div>
+
+  <div class="form-group">
+    <label for="inputMinutes">Minutes</label>
+    <InputNumber id="inputMinutes" class="form-control" @bind-Value="survey.Minutes" />
+    @if(editContext.GetValidationMessages(() => survey.Minutes).Any()){
+      <div class="invalid-feedback">
+        @editContext.GetValidationMessages(() => survey.Minutes).First()
+      </div>
+    }
+  </div>
+
+  <label>Options</label>
+  @foreach (OptionCreateModel option in survey.Options)
+  {
+    <div class="input-group mb-3">
+      <InputText id="inputMinutes" class="form-control" @bind-Value="option.OptionValue" />
+      <div class="input-group-append">
+        <button class="btn btn-outline-primary" type="button" @onclick="@(() => survey.RemoveOption(option))">Remove</button>
+      </div>
+      @if(editContext.GetValidationMessages(() => option.OptionValue).Any()){
+        <div class="invalid-feedback">
+          @editContext.GetValidationMessages(() => option.OptionValue).First()
+        </div>
+      }
+    </div>
+  }
+  <p><button class="btn btn-primary" type="button" @onclick="@(() => survey.AddOption())"><i class="oi oi-plus" /> Add Option</button></p>
+
+  <p>
+    <button type="submit" class="btn btn-primary float-right">Submit</button>
+  </p>
+</EditForm>
+
+@code {
+    private AddSurveyModel survey = new();
+    private EditContext editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(survey);
+        editContext.SetFieldCssClassProvider(new BootstrapFieldClassProvider());
+    }
+    private async Task OnSubmit()
+    {
+        // even though the server will validate the AddSurveyModel, check client side that the model is valid
+        if (!editContext.Validate()) return;
+
+        try
+        {
+            HttpResponseMessage response = await SurveyHttpClient.AddSurvey(survey);
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("");
+            }
+            else
+            {
+                // TODO! check if received a Bad status request
+                // and if so, show the errors returned from the server in the alert box
+                // See: https://docs.microsoft.com/en-us/aspnet/core/blazor/forms-validation?view=aspnetcore-5.0#server-validation
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError("Error: {Message}", ex.Message);
+        }
+
+    }
+
+    // This class lets us modify the CSS class that will be added to the input elements
+    // when the properties they are bound to are invalid
+    // This way we can add the "is-invalid" to the input elements
+    // See: https://docs.microsoft.com/en-us/aspnet/core/blazor/forms-validation?view=aspnetcore-5.0#custom-validation-class-attributes
+    private class BootstrapFieldClassProvider : FieldCssClassProvider
+    {
+        public override string GetFieldCssClass(EditContext editContext, in FieldIdentifier fieldIdentifier)
+        {
+            bool isValid = !editContext.GetValidationMessages(fieldIdentifier).Any();
+            return isValid ? "" : "is-invalid";
+        }
+    }
+}
