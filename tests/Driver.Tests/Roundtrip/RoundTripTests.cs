@@ -132,28 +132,28 @@ public class RoundTripObject {
     public decimal? NullDecimal { get; set; } = null;
 
     private static readonly DateTime s_dateTime = new (2012, 6, 12, 10, 5, 32, 648, DateTimeKind.Utc);
-    //public DateTime MaxUtcDateTime { get; set; } = DateTime.MaxValue.AsUtc();
+    public DateTime MaxUtcDateTime { get; set; } = DateTime.MaxValue.AsUtc();
     public DateTime MinUtcDateTime { get; set; } = DateTime.MinValue.AsUtc();
     public DateTime UtcDateTime { get; set; } = s_dateTime;
     public DateTime? NullDateTime { get; set; } = null;
 
-    //public DateTimeOffset MaxUtcDateTimeOffset { get; set; } = DateTimeOffset.MaxValue.ToUniversalTime();
+    public DateTimeOffset MaxUtcDateTimeOffset { get; set; } = DateTimeOffset.MaxValue.ToUniversalTime();
     public DateTimeOffset MinUtcDateTimeOffset { get; set; } = DateTimeOffset.MinValue.ToUniversalTime();
     public DateTimeOffset UtcDateTimeOffset { get; set; } = new (s_dateTime);
     public DateTimeOffset? NullDateTimeOffset { get; set; } = null;
 
-    //public DateOnly MaxUtcDateOnly { get; set; } = DateOnly.MaxValue;
+    public DateOnly MaxUtcDateOnly { get; set; } = DateOnly.MaxValue;
     public DateOnly MinUtcDateOnly { get; set; } = DateOnly.MinValue;
     public DateOnly UtcDateOnly { get; set; } = DateOnly.FromDateTime(s_dateTime);
     public DateOnly? NullUtcDateOnly { get; set; } = null;
 
-    //public TimeOnly MaxUtcTimeOnly { get; set; } = TimeOnly.MaxValue;
+    public TimeOnly MaxUtcTimeOnly { get; set; } = TimeOnly.MaxValue;
     public TimeOnly MinUtcTimeOnly { get; set; } = TimeOnly.MinValue;
     public TimeOnly UtcTimeOnly { get; set; } = TimeOnly.FromDateTime(s_dateTime);
     public TimeOnly? NullUtcTimeOnly { get; set; } = null;
 
-    //public TimeSpan MaxTimeSpan { get; set; } = TimeSpan.MaxValue;
-    //public TimeSpan MinTimeSpan { get; set; } = TimeSpan.MinValue;
+    public TimeSpan MaxTimeSpan { get; set; } = TimeSpan.MaxValue;
+    public TimeSpan MinTimeSpan { get; set; } = TimeSpan.MinValue;
     public TimeSpan TimeSpan { get; set; } = new (200, 20, 34, 41, 265);
     public TimeSpan? NullTimeSpan { get; set; } = null;
 

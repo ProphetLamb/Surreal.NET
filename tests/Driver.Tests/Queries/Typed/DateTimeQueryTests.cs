@@ -16,7 +16,7 @@ public abstract class DateTimeQueryTests<T> : InequalityQueryTests<T, int, DateT
             yield return new DateTime(2012, 6, 12, 10, 5, 32, 648, DateTimeKind.Utc);
             yield return new DateTime(2012, 10, 2, 20, 55, 54, 3, DateTimeKind.Utc);
             yield return new DateTime(2012, 12, 2, 1, 2, 3, 4, DateTimeKind.Utc);
-            //yield return DateTime.MaxValue.AsUtc();
+            yield return DateTime.MaxValue.AsUtc();
             yield return DateTime.MinValue.AsUtc();
         }
     }

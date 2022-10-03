@@ -14,7 +14,7 @@ public abstract class DateTimeOffsetQueryTests<T> : InequalityQueryTests<T, int,
     private static IEnumerable<DateTimeOffset> TestValues {
         get {
             yield return new DateTimeOffset(2012, 6, 12, 10, 5, 32, 648, TimeSpan.Zero);
-            //yield return DateTimeOffset.MaxValue.ToUniversalTime();
+            yield return DateTimeOffset.MaxValue.ToUniversalTime();
             yield return DateTimeOffset.MinValue.ToUniversalTime();
         }
     }
