@@ -21,7 +21,7 @@ public abstract class DatabaseTestDriver<T>
         IResponse infoResp = await db.Info();
         AssertOk(infoResp);
 
-        IResponse signInStatus = await db.Signin(new{ user = TestHelper.User, pass = TestHelper.Pass, });
+        IResponse signInStatus = await db.Signin(new RootAuth(TestHelper.User, TestHelper.Pass));
 
         AssertOk(signInStatus);
         //AssertOk(await db.Invalidate());

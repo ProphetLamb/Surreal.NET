@@ -216,7 +216,7 @@ public static class ConfigBuilder {
         /// <inheritdoc />
         public void Configure(ref Config config) {
             InvalidConfigException.ThrowIfNullOrWhitespace(Username, "Username cannot be null or whitespace");
-            config.Authentication = Auth.Basic;
+            config.Authentication = AuthMethod.Basic;
             config.Username = Username;
             config.Password = Password;
         }
@@ -261,7 +261,7 @@ public static class ConfigBuilder {
         /// <inheritdoc />
         public void Configure(ref Config config) {
             InvalidConfigException.ThrowIfNullOrWhitespace(Token, "Invalid Json Web Token");
-            config.Authentication = Auth.JsonWebToken;
+            config.Authentication = AuthMethod.JsonWebToken;
             config.JsonWebToken = Token;
         }
 

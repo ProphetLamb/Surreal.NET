@@ -97,18 +97,18 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         return CompletedOk;
     }
 
-    public async Task<RestResponse> Signup(
-        object auth,
-        CancellationToken ct = default) {
+    public async Task<RestResponse> Signup<TRequest>(
+        TRequest auth,
+        CancellationToken ct = default) where TRequest : IAuth {
         return await Signup(ToJsonContent(auth), ct);
     }
 
-    public async Task<RestResponse> Signin(
-        object auth,
-        CancellationToken ct = default) {
-        // SetAuth(auth.Username, auth.Password);
+    public async Task<RestResponse> Signin<TRequest>(
+        TRequest auth,
+        CancellationToken ct = default) where TRequest : IAuth {
+        
         HttpResponseMessage rsp = await _client.PostAsync("signin", ToJsonContent(auth), ct);
-        return await rsp.ToSurrealFromSignin();
+        return await rsp.ToSurrealFromAuthResponse();
     }
 
     public Task<RestResponse> Invalidate(CancellationToken ct = default) {
@@ -121,7 +121,9 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     public Task<RestResponse> Authenticate(
         string token,
         CancellationToken ct = default) {
-        throw new NotSupportedException(); // TODO: Is it tho???
+        SetAuth(token);
+
+        return CompletedOk;
     }
 
     public Task<RestResponse> Let(
@@ -197,7 +199,8 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     private void SetAuth(
         string? user,
         string? pass) {
-        // TODO: Support jwt auth
+        RemoveAuth();
+
         _config.Username = user;
         _config.Password = pass;
         AuthenticationHeaderValue header = new(
@@ -208,7 +211,18 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         _client.DefaultRequestHeaders.Authorization = header;
     }
 
+    private void SetAuth(
+        string? jwt) {
+        RemoveAuth();
+
+        _config.JsonWebToken = jwt;
+        AuthenticationHeaderValue header = new("Bearer", jwt);
+
+        _client.DefaultRequestHeaders.Authorization = header;
+    }
+
     private void RemoveAuth() {
+        _config.JsonWebToken = null;
         _config.Username = null;
         _config.Password = null;
         _client.DefaultRequestHeaders.Authorization = null;
@@ -235,7 +249,7 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         HttpContent auth,
         CancellationToken ct = default) {
         HttpResponseMessage rsp = await _client.PostAsync("signup", auth, ct);
-        return await rsp.ToSurreal();
+        return await rsp.ToSurrealFromAuthResponse();
     }
 
     /// <inheritdoc cref="Query(string, IReadOnlyDictionary{string, object?}?, CancellationToken)" />
@@ -329,12 +343,6 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
 
     private static HttpContent ToContent(string s = "") {
         StringContent content = new(s, Encoding.UTF8, "application/json");
-
-        if (content.Headers.ContentType != null) {
-            // The server can only handle 'Content-Type' with 'application/json', remove any further information from this header
-            content.Headers.ContentType.CharSet = null;
-        }
-
         return content;
     }
 
@@ -342,9 +350,6 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         HttpMethod method,
         string requestUri,
         string content = "") {
-        // SurrealDb must have a 'Content-Type' header defined,
-        // but HttpClient does not allow default request headers to be set.
-        // So we need to make PUT and DELETE requests with an empty request body, but with request headers
         return new HttpRequestMessage { Method = method, RequestUri = new Uri(requestUri, UriKind.Relative), Content = ToContent(content), };
     }
 }

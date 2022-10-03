@@ -75,14 +75,14 @@ public readonly struct RestResponse : IResponse {
     /// <summary>
     /// Parses a signing <see cref="HttpResponseMessage"/> containing JSON to a <see cref="RestResponse"/>.
     /// </summary>
-    public static async Task<RestResponse> FromSignin(
+    public static async Task<RestResponse> FromAuthResponse(
         HttpResponseMessage msg,
         CancellationToken ct = default) {
         
-        // Signin returns a different object to the other response
+        // Signin and Signup returns a different object to the other response
         // And for that reason needs it's on deserialization path
         // The whole response is ultimately shoved into the RestResponse.Success.result field
-        // {"code":200,"details":"Authentication succeeded","token":""}
+        // {"code":200,"details":"Authentication succeeded","token":"a.jwt.token"}
 
 #if NET6_0_OR_GREATER
         Stream stream = await msg.Content.ReadAsStreamAsync(ct);
@@ -94,8 +94,8 @@ public readonly struct RestResponse : IResponse {
             return From(err);
         }
 
-        JsonElement jsonElement = await JsonSerializer.DeserializeAsync<JsonElement>(stream, SerializerOptions.Shared, ct);
-        Success doc = new ("", "OK", jsonElement);
+        AuthResult jsonElement = await JsonSerializer.DeserializeAsync<AuthResult>(stream, SerializerOptions.Shared, ct);
+        Success doc = new ("", jsonElement.code.ToString(), jsonElement.token);
 
         return From(doc);
     }
@@ -122,6 +122,7 @@ public readonly struct RestResponse : IResponse {
         }
 
         List<Success>? docs = await JsonSerializer.DeserializeAsync<List<Success>>(stream, SerializerOptions.Shared, ct);
+
         Success doc = (docs?.FirstOrDefault(e => e.result.ValueKind != JsonValueKind.Null)).GetValueOrDefault(default);
 
         return From(doc);
@@ -153,7 +154,7 @@ public readonly struct RestResponse : IResponse {
 
     private static RestResponse From(Success success) {
         if (success == default) {
-            return new(success.time, success.status, null, null, default);
+            return EmptyOk;
         }
         JsonElement e = success.result.IntoSingle();
         return new(success.time, success.status, null, null, e);
@@ -174,4 +175,9 @@ public readonly struct RestResponse : IResponse {
         string time,
         string status,
         JsonElement result);
+
+    public readonly record struct AuthResult(
+        HttpStatusCode code,
+        string details,
+        JsonElement token);
 }

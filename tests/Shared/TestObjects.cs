@@ -21,3 +21,15 @@ public class ExtendedTestObject<TKey, TValue> : TestObject<TKey, TValue> {
     
     public TValue MergeValue { get; set; }
 }
+
+public record struct IdScopeAuth(
+    string id,
+    string user,
+    string pass,
+    string NS,
+    string DB,
+    string SC) : IAuth;
+
+public record struct User(
+    string id,
+    string email);

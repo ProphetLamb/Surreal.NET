@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace SurrealDB.Configuration;
 
@@ -14,19 +14,24 @@ public struct Config {
     public IPEndPoint? Endpoint { get; set; }
 
     /// <summary>
-    ///     Optional: The database to export the data from.
+    ///     Optional: Sets the selected Database for queries.
     /// </summary>
     public string? Database { get; set; }
 
     /// <summary>
-    ///     Optional: The namespace to export the data from.
+    ///     Optional: Sets the selected Namespace for queries.
     /// </summary>
     public string? Namespace { get; set; }
 
     /// <summary>
+    ///     Optional: Sets the desired authentication scope for for a user.
+    /// </summary>
+    public string? Scope { get; set; }
+
+    /// <summary>
     ///     The authentication method to use.
     /// </summary>
-    public Auth Authentication { get; set; }
+    public AuthMethod Authentication { get; set; }
 
     /// <summary>
     ///     Database authentication username to use when connecting.
