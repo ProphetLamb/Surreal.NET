@@ -29,15 +29,129 @@ public abstract class GeneralQueryTests<T>
     }
 
     private class MathRequestDocument {
-        public float f1 { get; set; }
-        public float f2 { get; set; }
+        public float f1 {get; set;}
+        public float f2 {get; set;}
     }
 
     private class MathResultDocument {
-        public float result { get; set; }
+        public float result {get; set;}
     }
 
-    [Fact(Timeout = 10_000)]
+    [Fact]
+    public async Task StopStartConnectionTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            string sql = "INFO FOR DB;";
+            var response = await db.Query(sql, null);
+            Assert.NotNull(response);
+            TestHelper.AssertOk(response);
+
+            await db.Close();
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await db.Query(sql, null));
+            db.Dispose();
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await db.Query(sql, null));
+
+            db = new();
+            await db.Open(TestHelper.Default);
+            
+            response = await db.Query(sql, null);
+            Assert.NotNull(response);
+            TestHelper.AssertOk(response);
+        }
+    );
+
+    [Fact]
+    public async Task SwitchDatabaseTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            var nsName = db.GetConfig().Namespace!;
+            var originalDbName = db.GetConfig().Database!;
+            var otherDbName = "DifferentDb";
+
+            TestObject<int, string> expectedOriginalObject = new(1, originalDbName);
+            TestObject<int, string> expectedOtherObject = new(1, otherDbName);
+            
+            Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
+            await db.Create(thing, expectedOriginalObject);
+
+            {
+                var useResponse = await db.Use(otherDbName, nsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+
+                await db.Create(thing, expectedOtherObject);
+
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOtherObject);
+            }
+
+            {
+                var useResponse = await db.Use(originalDbName, nsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+                
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOriginalObject);
+            }
+
+        }
+    );
+
+    [Fact]
+    public async Task SwitchNamespaceTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            var originalNsName = db.GetConfig().Namespace!;
+            var otherNsName = "DifferentNs";
+            var dbName = db.GetConfig().Database!;
+
+            TestObject<int, string> expectedOriginalObject = new(1, originalNsName);
+            TestObject<int, string> expectedOtherObject = new(1, otherNsName);
+            
+            Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
+            await db.Create(thing, expectedOriginalObject);
+
+            {
+                var useResponse = await db.Use(dbName, otherNsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+
+                await db.Create(thing, expectedOtherObject);
+
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOtherObject);
+            }
+
+            {
+                var useResponse = await db.Use(dbName, originalNsName);
+                Assert.NotNull(useResponse);
+                TestHelper.AssertOk(useResponse);
+
+                var response = await db.Select(thing);
+
+                Assert.NotNull(response);
+                TestHelper.AssertOk(response);
+                Assert.True(response.TryGetResult(out Result result));
+                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                doc.Should().BeEquivalentTo(expectedOriginalObject);
+            }
+
+        }
+    );
+
+    [Fact]
     public async Task SimpleFuturesQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = "select * from <future> { time::now() };";
@@ -77,7 +191,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact(Timeout = 10_000)]
+    [Fact]
     public async Task CryptoFunctionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             string sql = "SELECT * FROM crypto::md5(\"tobie\");";
@@ -92,13 +206,13 @@ GROUP BY country;";
         }
     );
 
-    [Fact(Timeout = 10_000)]
+    [Fact]
     public async Task SimpleAdditionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = 1, f2 = 1, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
-            await db.Create(thing, expectedObject);
+        Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+        await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
             Dictionary<string, object?> param = new() { ["record"] = thing };
@@ -112,7 +226,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact(Timeout = 10_000)]
+    [Fact]
     public async Task EpsilonAdditionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = float.Epsilon, f2 = float.Epsilon, };
@@ -134,7 +248,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact(Timeout = 10_000)]
+    [Fact]
     public async Task MinValueAdditionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = float.MinValue, f2 = float.MaxValue, };
@@ -156,7 +270,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact(Timeout = 10_000)]
+    [Fact]
     public async Task MaxValueSubtractionQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
             MathRequestDocument expectedObject = new() { f1 = float.MaxValue, f2 = float.MinValue, };
@@ -177,7 +291,7 @@ GROUP BY country;";
         }
     );
 
-    [Fact(Timeout = 10_000)]
+    [Fact]
     public async Task SimultaneousDatabaseOperations() => await DbHandle<T>.WithDatabase(
         async db => {
             var taskCount = 50;
@@ -195,11 +309,11 @@ GROUP BY country;";
         var createResponse = await db.Create(thing, expectedResult).ConfigureAwait(false);
         AssertResponse(createResponse, expectedResult);
         Logger.WriteLine($"Create {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
-
+        
         var selectResponse = await db.Select(thing).ConfigureAwait(false);
         AssertResponse(selectResponse, expectedResult);
         Logger.WriteLine($"Select {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
-
+        
         string sql = "SELECT * FROM $record";
         Dictionary<string, object?> param = new() { ["record"] = thing };
         var queryResponse = await db.Query(sql, param).ConfigureAwait(false);

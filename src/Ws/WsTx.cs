@@ -28,7 +28,16 @@ public sealed class WsTx : IDisposable {
         if (_ws.State == WebSocketState.Closed) {
             return;
         }
-        await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "client disconnect", ct);
+
+        try {
+            await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "client disconnect", ct);
+        } catch (OperationCanceledException) {
+            if (ct.IsCancellationRequested) {
+                // Catch any canceled exception that is generated during the close,
+                // but still throw for cancellations that we requested.
+                throw;
+            }
+        }
     }
 
     public void Dispose() {

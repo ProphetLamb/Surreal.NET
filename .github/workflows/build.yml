@@ -19,6 +19,7 @@ jobs:
         dotnet:
           [{ ch: "3.1", ver: "netcoreapp31" }, { ch: "6.0", ver: "net60" }]
         nightly: [true, false]
+      fail-fast: false
 
     steps:
       - name: Checkout
