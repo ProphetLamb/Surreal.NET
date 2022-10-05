@@ -22,7 +22,7 @@ public class ExtendedTestObject<TKey, TValue> : TestObject<TKey, TValue> {
     public TValue MergeValue { get; set; }
 }
 
-public record struct IdScopeAuth(
+public readonly record struct IdScopeAuth(
     string id,
     string user,
     string pass,
@@ -30,6 +30,16 @@ public record struct IdScopeAuth(
     string DB,
     string SC) : IAuth;
 
-public record struct User(
+public readonly record struct User(
     string id,
     string email);
+
+public class Temperature {
+    public string location;
+    public DateTime date;
+    public float temperature;
+}
+
+public class Field<T> {
+    public List<T> field { get; set; }
+}

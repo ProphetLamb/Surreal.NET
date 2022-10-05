@@ -217,6 +217,38 @@ public abstract class QueryTests<T, TKey, TValue>
         }
     );
 
+    [Theory]
+    [MemberData("KeyAndValuePairs")]
+    public async Task SimpleRelateAndGraphSemanticsQueryTest(TKey key, TValue value) => await DbHandle<T>.WithDatabase(
+        async db => {
+            TestObject<TKey, TValue> expectedObject = new(key, value);
+
+            Thing thing1 = Thing.From("object1", expectedObject.Key!.ToString());
+            await db.Create(thing1, expectedObject);
+
+            Thing thing2 = Thing.From("object2", expectedObject.Key!.ToString());
+            await db.Create(thing2, expectedObject);
+
+            var relateSql = "RELATE ($thing1)->hasOtherThing->($thing2)";
+            var vars = new Dictionary<string, object>
+            {
+                {"thing1", thing1},
+                {"thing2", thing2},
+            };
+            var relateResponse = await db.Query(relateSql, vars);
+            Assert.NotNull(relateResponse);
+            TestHelper.AssertOk(relateResponse);
+
+            var thing2Sql = "SELECT ->hasOtherThing->object2.* AS field FROM $thing1";
+            var thing2Response = await db.Query(thing2Sql, vars);
+            Assert.NotNull(thing2Response);
+            TestHelper.AssertOk(thing2Response);
+            Assert.True(thing2Response.TryGetResult(out Result thing2Result));
+            Field<TestObject<TKey, TValue>>? thing2Doc = thing2Result.GetObject<Field<TestObject<TKey, TValue>>>();
+            thing2Doc.field.First().Should().BeEquivalentTo(expectedObject);
+        }
+    );
+
     [DebuggerStepThrough]
     protected static string Serialize<V>(in V value) {
         return JsonSerializer.Serialize(value, SerializerOptions.Shared);
