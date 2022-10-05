@@ -41,6 +41,7 @@ jobs:
           export NIGHTLY=${{ matrix.nightly }}
           curl -sSf https://install.surrealdb.com | sh
           export PATH="$HOME/.local/bin/:$PATH"
+          surreal version
 
       - name: Initialize .NET SDK
         run: |
