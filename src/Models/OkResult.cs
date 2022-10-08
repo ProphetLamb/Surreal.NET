@@ -12,6 +12,8 @@ namespace SurrealDB.Models;
 /// </summary>
 [DebuggerDisplay("{Inner,nq}")]
 public readonly struct OkResult : IResult, IEquatable<OkResult>, IComparable<OkResult> {
+    public const string OK = "OK";
+
     private readonly JsonElement _json;
     private readonly object? _sentinelOrValue;
     private readonly long _int64ValueField;

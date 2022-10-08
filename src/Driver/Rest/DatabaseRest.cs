@@ -350,6 +350,6 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         HttpMethod method,
         string requestUri,
         string content = "") {
-        return new HttpRequestMessage { Method = method, RequestUri = new Uri(requestUri, UriKind.Relative), Content = ToContent(content), };
+        return new HttpRequestMessage { Method = method, RequestUri = new Uri(requestUri, UriKind.Relative), Content = ToContent(content),  };
     }
 }

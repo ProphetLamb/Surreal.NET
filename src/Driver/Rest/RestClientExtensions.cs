@@ -18,8 +18,8 @@ internal static class RestClientExtensions {
 #endif
         if (!msg.IsSuccessStatusCode) {
             RestError restError = await JsonSerializer.DeserializeAsync<RestError>(stream, SerializerOptions.Shared, ct);
-            ErrorResult errorResult = restError.ToErrorResult();
-            return new RestResponse(errorResult);
+            RawResult rawResult = restError.ToRawResult();
+            return new RestResponse(rawResult);
         }
 
         if (await PeekIsEmpty(stream, ct)) {
@@ -27,15 +27,13 @@ internal static class RestClientExtensions {
             return new RestResponse();
         }
         
-        List<RawResult>? docs = await JsonSerializer.DeserializeAsync<List<RawResult>>(stream, SerializerOptions.Shared, ct);
+        List<RawResult>? rawResults = await JsonSerializer.DeserializeAsync<List<RawResult>>(stream, SerializerOptions.Shared, ct);
 
-        if (docs == null) {
+        if (rawResults == null) {
             return new RestResponse();
         }
 
-        var results = docs.Select(e => e.ToResult()).ToList();
-
-        return new RestResponse(results);
+        return new RestResponse(rawResults);
     }
     
     internal static async Task<RestResponse> ToSurrealFromAuthResponse(this HttpResponseMessage msg, CancellationToken ct = default) {
@@ -52,13 +50,13 @@ internal static class RestClientExtensions {
 #endif
         if (msg.StatusCode != HttpStatusCode.OK) {
             RestError restError = await JsonSerializer.DeserializeAsync<RestError>(stream, SerializerOptions.Shared, ct);
-            ErrorResult errorResult = restError.ToErrorResult();
-            return new RestResponse(errorResult);
+            RawResult rawResult = restError.ToRawResult();
+            return new RestResponse(rawResult);
         }
 
         AuthResult result = await JsonSerializer.DeserializeAsync<AuthResult>(stream, SerializerOptions.Shared, ct);
 
-        return new RestResponse(result.ToResult());
+        return new RestResponse(result.ToRawResult());
     }
 
     /// <summary>
@@ -83,9 +81,9 @@ internal static class RestClientExtensions {
         string details,
         string description,
         string information) {
-        internal ErrorResult ToErrorResult() {
-            ErrorResult errorResult = new (code, details, $"{description}\n{information}");
-            return errorResult;
+        internal RawResult ToRawResult() {
+            RawResult rawResult = new (code, ErrorResult.ERR, $"{details}: {description}\n{information}");
+            return rawResult;
         }
     }
 
@@ -93,8 +91,11 @@ internal static class RestClientExtensions {
         HttpStatusCode code,
         string details,
         JsonElement token) {
-        internal IResult ToResult() {
-            return OkResult.From(token);
+        internal RawResult ToRawResult() {
+            if (code == HttpStatusCode.OK) {
+                return new RawResult((int)code, OkResult.OK, details, token);
+            }
+            return new RawResult((int)code, ErrorResult.ERR, details, token);
         }
     }
 }

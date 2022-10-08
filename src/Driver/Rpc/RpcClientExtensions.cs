@@ -16,18 +16,17 @@ internal static class RpcClientExtensions {
         }
         
         if (rsp.error != default) {
-            return new RpcResponse(new ErrorResult(rsp.error.code, string.Empty, rsp.error.message));
+            var rawResult = new RawResult(rsp.error.code, ErrorResult.ERR, rsp.error.message);
+            return new RpcResponse(rawResult);
         }
 
-        var docs = UnpackFromStatusDocument(rsp.result);
+        var rawResults = UnpackFromStatusDocument(rsp.result);
 
-        if (docs == null) {
+        if (rawResults == null) {
             return new RpcResponse();
         }
-
-        var results = docs.Select(e => e.ToResult()).ToList();
-
-        return new RpcResponse(results);
+        
+        return new RpcResponse(rawResults);
     }
 
     [DoesNotReturn]
@@ -85,7 +84,7 @@ internal static class RpcClientExtensions {
     }
 
     private static List<RawResult> ToSingleRawResult(in JsonElement element) {
-        var result = new RawResult(string.Empty, RawResult.OK, string.Empty, element.IntoSingle());
+        var result = new RawResult(null, OkResult.OK, null, element.IntoSingle());
         var rawResultList = new List<RawResult> { result };
         return rawResultList;
     }

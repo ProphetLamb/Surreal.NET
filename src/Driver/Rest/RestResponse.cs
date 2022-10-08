@@ -11,22 +11,24 @@ namespace SurrealDB.Driver.Rest;
 public readonly struct RestResponse : IResponse {
     internal static RestResponse EmptyOk = new ();
 
-    public IReadOnlyList<IResult> Results { get; }
+    private readonly List<RawResult> _rawResults;
+    List<RawResult> IResponse.RawResults => _rawResults;
+
+    public IEnumerable<IResult> Results => IResponse.GetResults(this);
+    public IEnumerable<OkResult> AllOkResults => IResponse.GetAllOkResults(this);
+    public IEnumerable<ErrorResult> AllErrorResults => IResponse.GetAllErrorResults(this);
+    public bool HasErrors => IResponse.GetHasErrors(this);
+    public bool IsEmpty => IResponse.GetIsEmpty(this);
 
     public RestResponse() {
-        Results = new List<IResult>();
+        _rawResults = new List<RawResult>();
     }
-    public RestResponse(List<IResult> results) {
-        Results = results;
+    public RestResponse(List<RawResult> results) {
+        _rawResults = results;
     }
-    public RestResponse(IResult result) {
-        Results = new List<IResult> { result };
+    public RestResponse(RawResult result) {
+        _rawResults = new List<RawResult> { result };
     }
-
-    public IEnumerable<OkResult> AllOkResults => Results.OfType<OkResult>();
-    public IEnumerable<ErrorResult> AllErrorResults => Results.OfType<ErrorResult>();
-    public bool HasErrors => AllErrorResults.Any();
-    public bool IsEmpty => !Results.Any();
 
     public bool TryGetFirstErrorResult(out ErrorResult errorResult) {
         return IResponse.TryGetFirstErrorResult(this, out errorResult);

@@ -11,22 +11,24 @@ namespace SurrealDB.Driver.Rpc;
 public readonly struct RpcResponse : IResponse {
     internal static RpcResponse EmptyOk = new ();
 
-    public IReadOnlyList<IResult> Results { get; }
+    private readonly List<RawResult> _rawResults;
+    List<RawResult> IResponse.RawResults => _rawResults;
+
+    public IEnumerable<IResult> Results => IResponse.GetResults(this);
+    public IEnumerable<OkResult> AllOkResults => IResponse.GetAllOkResults(this);
+    public IEnumerable<ErrorResult> AllErrorResults => IResponse.GetAllErrorResults(this);
+    public bool HasErrors => IResponse.GetHasErrors(this);
+    public bool IsEmpty => IResponse.GetIsEmpty(this);
 
     public RpcResponse() {
-        Results = new List<IResult>();
+        _rawResults = new List<RawResult>();
     }
-    public RpcResponse(List<IResult> results) {
-        Results = results;
+    public RpcResponse(List<RawResult> results) {
+        _rawResults = results;
     }
-    public RpcResponse(IResult result) {
-        Results = new List<IResult> { result };
+    public RpcResponse(RawResult result) {
+        _rawResults = new List<RawResult> { result };
     }
-
-    public IEnumerable<OkResult> AllOkResults => Results.OfType<OkResult>();
-    public IEnumerable<ErrorResult> AllErrorResults => Results.OfType<ErrorResult>();
-    public bool HasErrors => AllErrorResults.Any();
-    public bool IsEmpty => !Results.Any();
 
     public bool TryGetFirstErrorResult(out ErrorResult errorResult) {
         return IResponse.TryGetFirstErrorResult(this, out errorResult);
