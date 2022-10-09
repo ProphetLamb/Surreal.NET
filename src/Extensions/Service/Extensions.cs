@@ -23,14 +23,12 @@ public static class Extensions {
         if (config.RestEndpoint is not null) {
             DatabaseRest inst = new(in config);
             services.AddSingleton(typeof(IDatabase), inst);
-            services.AddSingleton(typeof(IDatabase<RestResponse>), inst);
             services.AddSingleton(typeof(DatabaseRest), inst);
         }
 
         if (config.RpcEndpoint is not null) {
             DatabaseRpc inst = new(in config);
             services.AddSingleton(typeof(IDatabase), inst);
-            services.AddSingleton(typeof(IDatabase<RpcResponse>), inst);
             services.AddSingleton(typeof(DatabaseRpc), inst);
         }
 

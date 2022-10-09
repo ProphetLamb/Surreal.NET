@@ -8,7 +8,7 @@ public sealed class Ws : IDisposable, IAsyncDisposable {
     private readonly CancellationTokenSource _cts = new();
     private readonly WsTx _tx = new();
     private readonly ConcurrentDictionary<string, IHandler> _handlers = new();
-    private Task _recv;
+    private Task _recv = Task.CompletedTask;
 
     public bool Connected => _tx.Connected;
 

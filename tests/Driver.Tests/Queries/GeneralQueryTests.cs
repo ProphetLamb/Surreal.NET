@@ -1,5 +1,12 @@
-using SurrealDB.Common;
+
 // ReSharper disable All
+
+using Superpower.Model;
+
+using SurrealDB.Models.Result;
+
+using DriverResponse = SurrealDB.Models.Result.DriverResponse;
+
 #pragma warning disable CS0169
 
 namespace SurrealDB.Driver.Tests.Queries;
@@ -22,10 +29,73 @@ public abstract class GeneralQueryTests<T>
         Logger = logger;
     }
     
-    private record GroupedCountries {
-        string? country;
-        string? total;
-    }
+    private static readonly List<Car> CarRecords = new List<Car> {
+        new Car(
+            Brand: "Car 1",
+            Age: 0,
+            RegisteredCountry: "GBR",
+            Wheels: new List<Wheel> {
+                new Wheel(IsFlat: false, Position: "LF"),
+                new Wheel(IsFlat: false, Position: "RF"),
+                new Wheel(IsFlat: false, Position: "LR"),
+                new Wheel(IsFlat: false, Position: "RR")
+            }
+        ),
+        new Car(
+            Brand: "Car 2",
+            Age: 2,
+            RegisteredCountry: "GBR",
+            Wheels: new List<Wheel> {
+                new Wheel(IsFlat: true, Position: "LF"),
+                new Wheel(IsFlat: false, Position: "RF"),
+                new Wheel(IsFlat: false, Position: "LR"),
+                new Wheel(IsFlat: false, Position: "RR")
+            }
+        ),
+        new Car(
+            Brand: "Car 3",
+            Age: 6,
+            RegisteredCountry: "USA",
+            Wheels: new List<Wheel> {
+                new Wheel(IsFlat: false, Position: "CF"),
+                /*Three Wheeled Car */
+                new Wheel(IsFlat: false, Position: "LR"),
+                new Wheel(IsFlat: false, Position: "RR")
+            }
+        ),
+        new Car(
+            Brand: "Car 4",
+            Age: 8,
+            RegisteredCountry: "GBR",
+            Wheels: new List<Wheel> {
+                new Wheel(IsFlat: false, Position: "LF"),
+                new Wheel(IsFlat: false, Position: "RF"),
+                new Wheel(IsFlat: false, Position: "LR"),
+                new Wheel(IsFlat: false, Position: "RR")
+            }
+        ),
+        new Car(
+            Brand: "Car 5",
+            Age: 3,
+            RegisteredCountry: "USA",
+            Wheels: new List<Wheel> {
+                new Wheel(IsFlat: false, Position: "LF"),
+                new Wheel(IsFlat: false, Position: "RF"),
+                new Wheel(IsFlat: true, Position: "LR"),
+                new Wheel(IsFlat: false, Position: "RR")
+            }
+        ),
+    };
+
+    private static readonly string CarRecordJson = JsonSerializer.Serialize(CarRecords);
+
+    private record Car(string Brand, int Age, string RegisteredCountry, List<Wheel> Wheels);
+    private record Wheel(bool IsFlat, string Position);
+    private record FlatWheelResult(List<Wheel> Wheels);
+    private record VehicleType(bool IsCar);
+    private record OldVehicleResponse(bool IsOldVehicle);
+    private record VehicleTypeResult(VehicleType VehicleType);
+    private record GroupedCountries(string Country, int Total);
 
     private class MathRequestDocument {
         public float f1 {get; set;}
@@ -43,34 +113,88 @@ public abstract class GeneralQueryTests<T>
 
             var response = await db.Query(sql, null);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             DateTime? doc = result.GetObject<DateTime>();
             doc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(10));
         }
     );
 
     [Fact]
-    public async Task CountAndGroupQueryTest() => await DbHandle<T>.WithDatabase(
+    public async Task SimpleArrayResultQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
-            string sql = @"SELECT
-	country,
-	count(age > 30) AS total
-FROM [
-	{ age: 33, country: 'GBR' },
-	{ age: 45, country: 'GBR' },
-	{ age: 39, country: 'USA' },
-	{ age: 29, country: 'GBR' },
-	{ age: 43, country: 'USA' }
-]
-GROUP BY country;";
+            List<int> expectedObject = new() { 1, 2, 3 };
+            string sql = "SELECT * FROM [1, 2, 3]";
 
             var response = await db.Query(sql, null);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
+            List<int>? doc = result.GetObject<List<int>>();
+            doc.Should().Equal(expectedObject);
+        }
+    );
+
+    [Fact]
+    public async Task ExpressionAsAnAliasQueryTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            List<OldVehicleResponse> expectedObject = CarRecords.Select(e => new OldVehicleResponse(e.Age >= 5)).ToList();
+            string sql = $@"SELECT Age >= 5 AS IsOldVehicle FROM {CarRecordJson}";
+
+            var response = await db.Query(sql, null);
+
+            TestHelper.AssertOk(response);
+            ResultValue result = response.FirstValue();
+            List<OldVehicleResponse>? doc = result.GetObject<List<OldVehicleResponse>>();
+            doc.Should().BeEquivalentTo(expectedObject);
+        }
+    );
+    
+    [Fact]
+    public async Task ManuallyGeneratedObjectStructureQueryTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+
+            var vehicleType = new VehicleTypeResult(new VehicleType(true));
+            List<VehicleTypeResult> expectedObject = CarRecords.Select(e => vehicleType ).ToList();
+            string sql = $@"SELECT {{ IsCar: true }} AS VehicleType FROM {CarRecordJson}";
+
+            var response = await db.Query(sql, null);
+
+            TestHelper.AssertOk(response);
+            ResultValue result = response.FirstValue();
+            List<VehicleTypeResult>? doc = result.GetObject<List<VehicleTypeResult>>();
+            doc.Should().BeEquivalentTo(expectedObject);
+        }
+    );
+
+    [Fact]
+    public async Task FilteredNestedArrayQueryTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            List<FlatWheelResult> expectedObject = CarRecords.Select(e => new FlatWheelResult(e.Wheels.Where(w => w.IsFlat).ToList())).ToList();
+            string sql = $@"SELECT Wheels[WHERE IsFlat = true] FROM {CarRecordJson}";
+
+            var response = await db.Query(sql, null);
+
+            TestHelper.AssertOk(response);
+            ResultValue result = response.FirstValue();
+            List<FlatWheelResult>? doc = result.GetObject<List<FlatWheelResult>>();
+            doc.Should().BeEquivalentTo(expectedObject);
+        }
+    );
+
+    [Fact]
+    public async Task CountAndGroupQueryTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            string sql = $@"SELECT
+	RegisteredCountry,
+	count(Age > 5) AS Total
+FROM {CarRecordJson}
+GROUP BY RegisteredCountry;";
+
+            var response = await db.Query(sql, null);
+
+            TestHelper.AssertOk(response);
+            ResultValue result = response.FirstValue();
             List<GroupedCountries>? doc = result.GetObject<List<GroupedCountries>>();
             doc.Should().HaveCount(2);
         }
@@ -83,9 +207,8 @@ GROUP BY country;";
 
             var response = await db.Query(sql, null);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             string? doc = result.GetObject<string>();
             doc.Should().BeEquivalentTo("4768b3fc7ac751e03a614e2349abf3bf");
         }
@@ -103,9 +226,8 @@ GROUP BY country;";
             Dictionary<string, object?> param = new() { ["record"] = thing };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             MathResultDocument? doc = result.GetObject<MathResultDocument>();
             doc.Should().BeEquivalentTo(expectedResult);
         }
@@ -124,11 +246,10 @@ GROUP BY country;";
             Dictionary<string, object?> param = new() { ["record"] = thing };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             MathResultDocument? doc = result.GetObject<MathResultDocument>();
-            Assert.NotNull(doc);
+            doc.Should().NotBeNull();
             doc!.result.Should().BeApproximately(expectedResult.result, 0.000001f);
         }
     );
@@ -146,11 +267,10 @@ GROUP BY country;";
             Dictionary<string, object?> param = new() { ["record"] = thing };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             MathResultDocument? doc = result.GetObject<MathResultDocument>();
-            Assert.NotNull(doc);
+            doc.Should().NotBeNull();
             doc!.result.Should().BeApproximately(expectedResult.result, 0.001f);
         }
     );
@@ -168,11 +288,26 @@ GROUP BY country;";
             Dictionary<string, object?> param = new() { ["record"] = thing };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             MathResultDocument? doc = result.GetObject<MathResultDocument>();
             doc.Should().BeEquivalentTo(expectedResult);
+        }
+    );
+
+    [Fact]
+    public async Task MultipleResultSetQueryTest() => await DbHandle<T>.WithDatabase(
+        async db => {
+            string expectedResult = "A Name";
+            string sql = $"LET $name = \"{expectedResult}\";\n"
+              + "SELECT * FROM $name;\n";
+            var response = await db.Query(sql, null);
+
+            TestHelper.AssertOk(response);
+            ResultValue result = response.FirstValue();
+            string? doc = result.GetObject<string>();
+            doc.Should().NotBeNull();
+            doc.Should().Be(expectedResult);
         }
     );
 
@@ -194,11 +329,11 @@ GROUP BY country;";
         var createResponse = await db.Create(thing, expectedResult).ConfigureAwait(false);
         AssertResponse(createResponse, expectedResult);
         Logger.WriteLine($"Create {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
-        
+
         var selectResponse = await db.Select(thing).ConfigureAwait(false);
         AssertResponse(selectResponse, expectedResult);
         Logger.WriteLine($"Select {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
-        
+
         string sql = "SELECT * FROM $record";
         Dictionary<string, object?> param = new() { ["record"] = thing };
         var queryResponse = await db.Query(sql, param).ConfigureAwait(false);
@@ -208,10 +343,9 @@ GROUP BY country;";
         Logger.WriteLine($"End {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
     }
 
-    private static void AssertResponse(IResponse? response, TestObject<int, int> expectedResult) {
-        Assert.NotNull(response);
+    private static void AssertResponse(DriverResponse response, TestObject<int, int> expectedResult) {
         TestHelper.AssertOk(response);
-        Assert.True(response.TryGetResult(out Result result));
+        Assert.True(response!.TryGetFirstValue(out ResultValue result));
         TestObject<int, int>? doc = result.GetObject<TestObject<int, int>>();
         doc.Should().BeEquivalentTo(expectedResult);
     }

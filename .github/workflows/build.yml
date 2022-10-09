@@ -18,7 +18,7 @@ jobs:
       matrix:
         dotnet:
           [{ ch: "3.1", ver: "netcoreapp31" }, { ch: "6.0", ver: "net60" }]
-        nightly: [true, false]
+        channel: ["nightly", "stable"]
       fail-fast: false
 
     steps:
@@ -36,11 +36,18 @@ jobs:
 
       - name: Initialize SurrealDB
         run: |
-          mkdir -p ~/.local/bin
-          export INSTALL_DIR=~/.local/bin
-          export NIGHTLY=${{ matrix.nightly }}
-          curl -sSf https://install.surrealdb.com | sh
+          mkdir -p ~/.local/bin || exit 1
+          mkdir -p ~/tmp || exit 1
+          pushd ~/tmp || exit 1
+
+          curl -sSf https://install.surrealdb.com -o ./surealdb-install.sh
+          chmod +x ./surealdb-install.sh
+          ./surealdb-install.sh ~/.local/bin --${{ matrix.channel }}
           export PATH="$HOME/.local/bin/:$PATH"
+
+          popd
+
+          surreal version || exit 1
 
       - name: Initialize .NET SDK
         run: |
@@ -63,7 +70,7 @@ jobs:
         if: success() || failure()
         uses: phoenix-actions/test-reporting@v8
         with:
-          name: results-${{ matrix.dotnet.ver }}-${{ matrix.nightly }}
+          name: results-${{ matrix.dotnet.ver }}-${{ matrix.channel }}
           path: test-results.trx
           reporter: dotnet-trx
           fail-on-error: false

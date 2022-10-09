@@ -1,6 +1,4 @@
-using SurrealDB.Models;
 
-using System.Net;
 // ReSharper disable InconsistentNaming
 
 namespace SurrealDB.Models;

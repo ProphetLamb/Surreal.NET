@@ -1,5 +1,8 @@
-using SurrealDB.Common;
+
 // ReSharper disable All
+
+using SurrealDB.Models.Result;
+
 #pragma warning disable CS0169
 
 namespace SurrealDB.Driver.Tests.Queries;
@@ -27,7 +30,6 @@ public abstract class ManagementQueryTests<T>
         async db => {
             string sql = "INFO FOR DB;";
             var response = await db.Query(sql, null);
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
 
             await db.Close();
@@ -37,9 +39,8 @@ public abstract class ManagementQueryTests<T>
 
             db = new();
             await db.Open(TestHelper.Default);
-            
+
             response = await db.Query(sql, null);
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
         }
     );
@@ -53,36 +54,32 @@ public abstract class ManagementQueryTests<T>
 
             TestObject<int, string> expectedOriginalObject = new(1, originalDbName);
             TestObject<int, string> expectedOtherObject = new(1, otherDbName);
-            
+
             Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
             await db.Create(thing, expectedOriginalObject);
 
             {
                 var useResponse = await db.Use(otherDbName, nsName);
-                Assert.NotNull(useResponse);
                 TestHelper.AssertOk(useResponse);
 
                 await db.Create(thing, expectedOtherObject);
 
                 var response = await db.Select(thing);
 
-                Assert.NotNull(response);
                 TestHelper.AssertOk(response);
-                Assert.True(response.TryGetResult(out Result result));
+                ResultValue result = response.FirstValue();
                 TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOtherObject);
             }
 
             {
                 var useResponse = await db.Use(originalDbName, nsName);
-                Assert.NotNull(useResponse);
                 TestHelper.AssertOk(useResponse);
-                
+
                 var response = await db.Select(thing);
 
-                Assert.NotNull(response);
                 TestHelper.AssertOk(response);
-                Assert.True(response.TryGetResult(out Result result));
+                ResultValue result = response.FirstValue();
                 TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOriginalObject);
             }
@@ -99,36 +96,32 @@ public abstract class ManagementQueryTests<T>
 
             TestObject<int, string> expectedOriginalObject = new(1, originalNsName);
             TestObject<int, string> expectedOtherObject = new(1, otherNsName);
-            
+
             Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
             await db.Create(thing, expectedOriginalObject);
 
             {
                 var useResponse = await db.Use(dbName, otherNsName);
-                Assert.NotNull(useResponse);
                 TestHelper.AssertOk(useResponse);
 
                 await db.Create(thing, expectedOtherObject);
 
                 var response = await db.Select(thing);
 
-                Assert.NotNull(response);
                 TestHelper.AssertOk(response);
-                Assert.True(response.TryGetResult(out Result result));
+                ResultValue result = response.FirstValue();
                 TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOtherObject);
             }
 
             {
                 var useResponse = await db.Use(dbName, originalNsName);
-                Assert.NotNull(useResponse);
                 TestHelper.AssertOk(useResponse);
 
                 var response = await db.Select(thing);
 
-                Assert.NotNull(response);
                 TestHelper.AssertOk(response);
-                Assert.True(response.TryGetResult(out Result result));
+                ResultValue result = response.FirstValue();
                 TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOriginalObject);
             }

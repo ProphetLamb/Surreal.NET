@@ -1,7 +1,7 @@
 ![Build Status](https://github.com/ProphetLamb/Surreal.Net/actions/workflows/build.yml/badge.svg)
 [![CodeFactor](https://www.codefactor.io/repository/github/prophetlamb/surreal.net/badge)](https://www.codefactor.io/repository/github/prophetlamb/surreal.net)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/315508e8f6bf4829ab7d5a0467b0c693)](https://www.codacy.com/gh/ProphetLamb/Surreal.Net/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ProphetLamb/Surreal.Net&amp;utm_campaign=Badge_Grade)
-[![codecov](https://codecov.io/gh/ProphetLamb/Surreal.Net/branch/master/graph/badge.svg?token=fcndEq1d3w)](https://codecov.io/gh/ProphetLamb/Surreal.Net)
+[![codecov](https://codecov.io/gh/Surreal-Net/Surreal.Net/branch/master/graph/badge.svg?token=fcndEq1d3w)](https://app.codecov.io/gh/Surreal-Net/Surreal.Net?search=&trend=30%20days)
 [![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 
 <!-- PROJECT LOGO -->
