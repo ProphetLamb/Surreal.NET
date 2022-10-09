@@ -7,7 +7,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<LangVersion>10</LangVersion>
+		<LangVersion>preview</LangVersion>
 		<TargetFrameworks>netstandard21;netcoreapp31;net60</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>

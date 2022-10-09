@@ -1,9 +1,11 @@
+using DriverResponse = SurrealDB.Models.Result.DriverResponse;
+
 namespace SurrealDB.Shared.Tests;
 
 public static class TestHelper {
-    
+
     public const string Loopback = "127.0.0.1";
-    public const int Port = 8082;
+    public const int Port = 23458;
     public const string User = "root";
     public const string Pass = "root";
     public const string Database = "test";
@@ -26,26 +28,35 @@ public static class TestHelper {
     }
 
     public static void AssertOk(
-        in IResponse rpcResponse,
-        // [CallerArgumentExpression("rpcResponse")]
+        DriverResponse rsp,
+        [CallerArgumentExpression("rsp")]
         string caller = "") {
-        if (!rpcResponse.TryGetError(out Error err)) {
+        if (!rsp.HasErrors) {
             return;
         }
 
-        Exception ex = new($"Expected Ok, got error code {err.Code} ({err.Message}) in {caller}");
+        var errorResponses = rsp.Errors.ToList();
+        var message = $"Expected OK, got {errorResponses.Count} Error responses in {caller}";
+        foreach (var errorResponse in errorResponses) {
+            message += $"\n\tStatus: {errorResponse.Status} | Message: {errorResponse.Message}";
+        }
+
+        Exception ex = new(message);
         throw ex;
     }
 
     public static void AssertError(
-        in IResponse rpcResponse,
-        // [CallerArgumentExpression("rpcResponse")]
+        in DriverResponse rsp,
+        [CallerArgumentExpression("rsp")]
         string caller = "") {
-        if (rpcResponse.TryGetError(out Error err)) {
+        if (rsp.HasErrors) {
             return;
         }
 
-        Exception ex = new($"Expected Error, got ok response in {caller}");
+        var errorResponses = rsp.Errors.ToList();
+        var message = $"Expected Error, got {errorResponses.Count} OK responses in {caller}";
+
+        Exception ex = new(message);
         throw ex;
     }
 }

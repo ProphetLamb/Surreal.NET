@@ -3,7 +3,7 @@ namespace SurrealDB.Configuration;
 /// <summary>
 ///     Available authentication methods
 /// </summary>
-public enum Auth : byte {
+public enum AuthMethod : byte {
     None = 0,
     Basic,
     JsonWebToken,

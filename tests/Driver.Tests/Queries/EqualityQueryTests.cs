@@ -1,8 +1,10 @@
+using SurrealDB.Models.Result;
+
 namespace SurrealDB.Driver.Tests.Queries;
 
 public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, TValue>
     where T : IDatabase, IDisposable, new() {
-    
+
     [Theory]
     [MemberData("ValuePairs")]
     public async Task EqualsQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
@@ -14,14 +16,13 @@ public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, 
 
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             var resultValue = result.GetObject<bool>();
-            Assert.Equal(resultValue, expectedResult);
+            resultValue.Should().Be(expectedResult);
         }
     );
-    
+
     [Theory]
     [MemberData("ValuePairs")]
     public async Task NotEqualsQueryTest(TValue val1, TValue val2) => await DbHandle<T>.WithDatabase(
@@ -33,11 +34,10 @@ public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, 
 
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             var resultValue = result.GetObject<bool>();
-            Assert.Equal(resultValue, expectedResult);
+            resultValue.Should().Be(expectedResult);
         }
     );
 

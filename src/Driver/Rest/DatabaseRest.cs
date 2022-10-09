@@ -6,9 +6,11 @@ using SurrealDB.Abstractions;
 using SurrealDB.Json;
 using SurrealDB.Models;
 
+using DriverResponse = SurrealDB.Models.Result.DriverResponse;
+
 namespace SurrealDB.Driver.Rest;
 
-public sealed partial class DatabaseRest : IDatabase<RestResponse> {
+public sealed class DatabaseRest : IDatabase {
     private readonly HttpClient _client = new();
     private Configuration.Config _config;
     private bool _configured;
@@ -19,7 +21,7 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         _config = config;
     }
 
-    private static Task<RestResponse> CompletedOk => Task.FromResult(RestResponse.EmptyOk);
+    private static Task<DriverResponse> CompletedOk => Task.FromResult(DriverResponse.EmptyOk);
 
     private readonly Dictionary<string, object?> _vars = new();
 
@@ -30,12 +32,12 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     ///     Indicates whether the client has valid connection details.
     /// </summary>
     public bool InvalidConnectionDetails =>
-        _client.DefaultRequestHeaders.Contains(NAMESPACE) &&
-        _client.DefaultRequestHeaders.Contains(DATABASE) &&
-        _client.DefaultRequestHeaders.Authorization != null;
+        !_client.DefaultRequestHeaders.Contains(NAMESPACE) ||
+        !_client.DefaultRequestHeaders.Contains(DATABASE) ||
+        _client.DefaultRequestHeaders.Authorization == null;
 
     private void ThrowIfInvalidConnection() {
-        if (!InvalidConnectionDetails) {
+        if (InvalidConnectionDetails) {
             throw new InvalidOperationException("The connection details is invalid.");
         }
     }
@@ -48,15 +50,15 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         return _config;
     }
 
-    public Task Open(Configuration.Config config, CancellationToken ct = default) {
+    public async Task Open(Configuration.Config config, CancellationToken ct = default) {
         _config = config;
         _configured = false;
-        return Open(ct);
+        await Open(ct);
     }
 
-    public Task Open(CancellationToken ct = default) {
+    public async Task Open(CancellationToken ct = default) {
         if (_configured) {
-            return Task.CompletedTask;
+            return;
         }
         _config.ThrowIfInvalid();
         _configured = true;
@@ -64,16 +66,19 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
 
         // Authentication
         _client.BaseAddress = _config.RestEndpoint;
-        SetAuth(_config.Username, _config.Password);
 
         // Use database
         SetUse(_config.Database, _config.Namespace);
 
+        if (_config.Username != null && _config.Password != null) {
+            SetAuth(_config.Username, _config.Password);
+        } else if (_config.JsonWebToken != null)  {
+            await Authenticate(_config.JsonWebToken, ct);
+        }
+
         // The warp package Surreal uses for HTTP will return a 405
         // on OSX if the `Accept` header is not set.
         _client.DefaultRequestHeaders.Add("Accept", new[] { "application/json" });
-
-        return Task.CompletedTask;
     }
 
     public Task Close(CancellationToken ct = default) {
@@ -81,14 +86,12 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    ///     UNSUPPORTED FOR REST IMPLEMENTATION
-    /// </summary>
-    public Task<RestResponse> Info(CancellationToken ct = default) {
-        return CompletedOk;
+    public async Task<DriverResponse> Info(CancellationToken ct = default) {
+        string authSql = "SELECT * FROM $auth;";
+        return await Query(authSql, null, ct);
     }
 
-    public Task<RestResponse> Use(
+    public Task<DriverResponse> Use(
         string? db,
         string? ns,
         CancellationToken ct = default) {
@@ -97,34 +100,35 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         return CompletedOk;
     }
 
-    public async Task<RestResponse> Signup(
-        object auth,
-        CancellationToken ct = default) {
+    public async Task<DriverResponse> Signup<TRequest>(
+        TRequest auth,
+        CancellationToken ct = default) where TRequest : IAuth {
         return await Signup(ToJsonContent(auth), ct);
     }
 
-    public async Task<RestResponse> Signin(
-        object auth,
-        CancellationToken ct = default) {
-        // SetAuth(auth.Username, auth.Password);
+    public async Task<DriverResponse> Signin<TRequest>(
+        TRequest auth,
+        CancellationToken ct = default) where TRequest : IAuth {
+        ThrowIfInvalidConnection();
         HttpResponseMessage rsp = await _client.PostAsync("signin", ToJsonContent(auth), ct);
-        return await rsp.ToSurrealFromSignin();
+        return await rsp.ToSurrealFromAuthResponse(ct);
     }
 
-    public Task<RestResponse> Invalidate(CancellationToken ct = default) {
-        SetUse(null, null);
+    public Task<DriverResponse> Invalidate(CancellationToken ct = default) {
         RemoveAuth();
 
         return CompletedOk;
     }
 
-    public Task<RestResponse> Authenticate(
+    public Task<DriverResponse> Authenticate(
         string token,
         CancellationToken ct = default) {
-        throw new NotSupportedException(); // TODO: Is it tho???
+        SetAuth(token);
+
+        return CompletedOk;
     }
 
-    public Task<RestResponse> Let(
+    public Task<DriverResponse> Let(
         string key,
         object? value,
         CancellationToken ct = default) {
@@ -137,7 +141,7 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         return CompletedOk;
     }
 
-    public async Task<RestResponse> Query(
+    public async Task<DriverResponse> Query(
         string sql,
         IReadOnlyDictionary<string, object?>? vars,
         CancellationToken ct = default) {
@@ -146,15 +150,16 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         return await Query(content, ct);
     }
 
-    public async Task<RestResponse> Select(
+    public async Task<DriverResponse> Select(
         Thing thing,
         CancellationToken ct = default) {
+        ThrowIfInvalidConnection();
         HttpRequestMessage requestMessage = ToRequestMessage(HttpMethod.Get, BuildRequestUri(thing));
         HttpResponseMessage rsp = await _client.SendAsync(requestMessage, ct);
-        return await rsp.ToSurreal();
+        return await rsp.ToSurreal(ct);
     }
 
-    public async Task<RestResponse> Create(
+    public async Task<DriverResponse> Create(
         Thing thing,
         object data,
         CancellationToken ct = default) {
@@ -162,29 +167,31 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     }
 
 
-    public async Task<RestResponse> Update(
+    public async Task<DriverResponse> Update(
         Thing thing,
         object data,
         CancellationToken ct = default) {
         return await Update(thing, ToJsonContent(data), ct);
     }
 
-    public async Task<RestResponse> Change(Thing thing, object data, CancellationToken ct = default) {
+    public async Task<DriverResponse> Change(Thing thing, object data, CancellationToken ct = default) {
+        ThrowIfInvalidConnection();
         HttpRequestMessage req = ToRequestMessage(HttpMethod.Patch, BuildRequestUri(thing), ToJson(data));
         HttpResponseMessage rsp = await _client.SendAsync(req, ct);
         return await rsp.ToSurreal();
     }
 
-    public async Task<RestResponse> Modify(Thing thing, Patch[] patches, CancellationToken ct = default) {
+    public async Task<DriverResponse> Modify(Thing thing, Patch[] patches, CancellationToken ct = default) {
         // Is this the most optimal way?
         string sql = "UPDATE $what PATCH $data RETURN DIFF";
         Dictionary<string, object?> vars = new() { ["what"] = thing, ["data"] = patches, };
         return await Query(sql, vars, ct);
     }
 
-    public async Task<RestResponse> Delete(
+    public async Task<DriverResponse> Delete(
         Thing thing,
         CancellationToken ct = default) {
+        ThrowIfInvalidConnection();
         HttpRequestMessage requestMessage = ToRequestMessage(HttpMethod.Delete, BuildRequestUri(thing));
         HttpResponseMessage rsp = await _client.SendAsync(requestMessage, ct);
         return await rsp.ToSurreal();
@@ -197,7 +204,8 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     private void SetAuth(
         string? user,
         string? pass) {
-        // TODO: Support jwt auth
+        RemoveAuth();
+
         _config.Username = user;
         _config.Password = pass;
         AuthenticationHeaderValue header = new(
@@ -208,7 +216,18 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         _client.DefaultRequestHeaders.Authorization = header;
     }
 
+    private void SetAuth(
+        string? jwt) {
+        RemoveAuth();
+
+        _config.JsonWebToken = jwt;
+        AuthenticationHeaderValue header = new("Bearer", jwt);
+
+        _client.DefaultRequestHeaders.Authorization = header;
+    }
+
     private void RemoveAuth() {
+        _config.JsonWebToken = null;
         _config.Username = null;
         _config.Password = null;
         _client.DefaultRequestHeaders.Authorization = null;
@@ -231,35 +250,39 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
     }
 
     /// <inheritdoc cref="Signup(Authentication, CancellationToken)" />
-    public async Task<RestResponse> Signup(
+    public async Task<DriverResponse> Signup(
         HttpContent auth,
         CancellationToken ct = default) {
+        ThrowIfInvalidConnection();
         HttpResponseMessage rsp = await _client.PostAsync("signup", auth, ct);
-        return await rsp.ToSurreal();
+        return await rsp.ToSurrealFromAuthResponse(ct);
     }
 
     /// <inheritdoc cref="Query(string, IReadOnlyDictionary{string, object?}?, CancellationToken)" />
-    public async Task<RestResponse> Query(
+    public async Task<DriverResponse> Query(
         HttpContent sql,
         CancellationToken ct = default) {
+        ThrowIfInvalidConnection();
         HttpResponseMessage rsp = await _client.PostAsync("sql", sql, ct);
-        return await rsp.ToSurreal();
+        return await rsp.ToSurreal(ct);
     }
 
-    public async Task<RestResponse> Create(
+    public async Task<DriverResponse> Create(
         Thing thing,
         HttpContent data,
         CancellationToken ct = default) {
+        ThrowIfInvalidConnection();
         HttpResponseMessage rsp = await _client.PostAsync(BuildRequestUri(thing), data, ct);
-        return await rsp.ToSurreal();
+        return await rsp.ToSurreal(ct);
     }
 
-    public async Task<RestResponse> Update(
+    public async Task<DriverResponse> Update(
         Thing thing,
         HttpContent data,
         CancellationToken ct = default) {
+        ThrowIfInvalidConnection();
         HttpResponseMessage rsp = await _client.PutAsync(BuildRequestUri(thing), data, ct);
-        return await rsp.ToSurreal();
+        return await rsp.ToSurreal(ct);
     }
 
     private string FormatUrl(
@@ -329,12 +352,6 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
 
     private static HttpContent ToContent(string s = "") {
         StringContent content = new(s, Encoding.UTF8, "application/json");
-
-        if (content.Headers.ContentType != null) {
-            // The server can only handle 'Content-Type' with 'application/json', remove any further information from this header
-            content.Headers.ContentType.CharSet = null;
-        }
-
         return content;
     }
 
@@ -342,9 +359,6 @@ public sealed partial class DatabaseRest : IDatabase<RestResponse> {
         HttpMethod method,
         string requestUri,
         string content = "") {
-        // SurrealDb must have a 'Content-Type' header defined,
-        // but HttpClient does not allow default request headers to be set.
-        // So we need to make PUT and DELETE requests with an empty request body, but with request headers
         return new HttpRequestMessage { Method = method, RequestUri = new Uri(requestUri, UriKind.Relative), Content = ToContent(content), };
     }
 }
