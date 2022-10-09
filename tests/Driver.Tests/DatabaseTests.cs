@@ -16,18 +16,18 @@ public abstract class DatabaseTestDriver<T>
     protected override async Task Run(T db) {
         db.GetConfig().Should().BeEquivalentTo(TestHelper.Default);
 
-        IResponse useResp = await db.Use(TestHelper.Database, TestHelper.Namespace);
-        AssertOk(useResp);
-        IResponse infoResp = await db.Info();
-        AssertOk(infoResp);
+        var useResp = await db.Use(TestHelper.Database, TestHelper.Namespace);
+        TestHelper.AssertOk(useResp);
+        var infoResp = await db.Info();
+        TestHelper.AssertOk(infoResp);
 
-        IResponse signInStatus = await db.Signin(new RootAuth(TestHelper.User, TestHelper.Pass));
+        var signInStatus = await db.Signin(new RootAuth(TestHelper.User, TestHelper.Pass));
 
-        AssertOk(signInStatus);
+        TestHelper.AssertOk(signInStatus);
         //AssertOk(await db.Invalidate());
 
         (string id1, string id2) = ("id1", "id2");
-        IResponse res1 = await db.Create(
+        var res1 = await db.Create(
             "person",
             new {
                 Title = "Founder & CEO",
@@ -37,9 +37,9 @@ public abstract class DatabaseTestDriver<T>
             }
         );
 
-        AssertOk(res1);
+        TestHelper.AssertOk(res1);
 
-        IResponse res2 = await db.Create(
+        var res2 = await db.Create(
             "person",
             new {
                 Title = "Contributor",
@@ -49,17 +49,17 @@ public abstract class DatabaseTestDriver<T>
             }
         );
 
-        AssertOk(res2);
+        TestHelper.AssertOk(res2);
 
         Thing thing2 = Thing.From("person", id2);
-        AssertOk(await db.Update(thing2, new { Marketing = false, }));
+        TestHelper.AssertOk(await db.Update(thing2, new { Marketing = false, }));
 
-        AssertOk(await db.Select(thing2));
+        TestHelper.AssertOk(await db.Select(thing2));
 
-        AssertOk(await db.Delete(thing2));
+        TestHelper.AssertOk(await db.Delete(thing2));
 
         Thing thing1 = Thing.From("person", id1);
-        AssertOk(
+        TestHelper.AssertOk(
             await db.Change(
                 thing1,
                 new {
@@ -72,19 +72,19 @@ public abstract class DatabaseTestDriver<T>
         );
 
         string newTitle = "Founder & CEO & Ruler of the known free World";
-        IResponse modifyResp = await db.Modify(thing1, new[] {
+        var modifyResp = await db.Modify(thing1, new[] {
             Patch.Replace("/Title", newTitle),
         });
-        AssertOk(modifyResp);
+        TestHelper.AssertOk(modifyResp);
 
-        AssertOk(await db.Let("tbl", "person"));
+        TestHelper.AssertOk(await db.Let("tbl", "person"));
 
-        IResponse queryResp = await db.Query(
+        var queryResp = await db.Query(
             "SELECT $props FROM $tbl WHERE title = $title",
             new Dictionary<string, object?> { ["props"] = "title, identifier", ["tbl"] = "person", ["title"] = newTitle, }
         );
 
-        AssertOk(queryResp);
+        TestHelper.AssertOk(queryResp);
 
         await db.Close();
     }
@@ -105,17 +105,4 @@ public abstract class DriverBase<T>
     }
 
     protected abstract Task Run(T db);
-
-    [DebuggerStepThrough]
-    protected void AssertOk(
-        in IResponse rpcResponse,
-        [CallerArgumentExpression("rpcResponse")]
-        string caller = "") {
-        if (!rpcResponse.TryGetError(out Error err)) {
-            return;
-        }
-
-        Exception ex = new($"Expected Ok, got {err.Code} ({err.Message}) in {caller}");
-        throw ex;
-    }
 }

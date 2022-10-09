@@ -1,4 +1,4 @@
-using SurrealDB.Common;
+using SurrealDB.Models.Result;
 
 namespace SurrealDB.Driver.Tests.Roundtrip;
 
@@ -21,9 +21,8 @@ public abstract class RoundTripTests<T>
             Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
             var response = await db.Create(thing, Expected);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             var returnedDocument = result.GetObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(Expected, returnedDocument);
         }
@@ -36,9 +35,8 @@ public abstract class RoundTripTests<T>
             await db.Create(thing, Expected);
             var response = await db.Select(thing);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
+            ResultValue result = response.FirstValue();
             var returnedDocument = result.GetObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(Expected, returnedDocument);
         }
@@ -54,7 +52,7 @@ public abstract class RoundTripTests<T>
 
             response.Should().NotBeNull();
             TestHelper.AssertOk(response);
-            response.TryGetResult(out Result result).Should().BeTrue();
+            response.TryGetFirstValue(out ResultValue result).Should().BeTrue();
             var returnedDocument = result.GetObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(Expected, returnedDocument);
         }
@@ -64,15 +62,14 @@ public abstract class RoundTripTests<T>
     public async Task CreateAndParameterizedQueryRoundTripTest() => await DbHandle<T>.WithDatabase(async db => {
         Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
         var rsp = await db.Create(thing, Expected);
-        rsp.IsOk.Should().BeTrue();
+        rsp.HasErrors.Should().BeFalse();
         string sql = "SELECT * FROM $thing";
         Dictionary<string, object?> param = new() { ["thing"] = thing, };
 
         var response = await db.Query(sql, param);
 
-        Assert.NotNull(response);
         TestHelper.AssertOk(response);
-        Assert.True(response.TryGetResult(out Result result));
+        ResultValue result = response.FirstValue();
         var returnedDocument = result.GetObject<RoundTripObject>();
         RoundTripObject.AssertAreEqual(Expected, returnedDocument);
     });
@@ -189,8 +186,8 @@ public class RoundTripObject {
     public static void AssertAreEqual(
         RoundTripObject? a,
         RoundTripObject? b) {
-        Assert.NotNull(a);
-        Assert.NotNull(b);
+        a.Should().NotBeNull();
+        b.Should().NotBeNull();
 
         b.Should().BeEquivalentTo(a);
     }

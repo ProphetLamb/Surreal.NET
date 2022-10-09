@@ -1,3 +1,7 @@
+using SurrealDB.Models.Result;
+
+using DriverResponse = SurrealDB.Models.Result.DriverResponse;
+
 namespace SurrealDB.Driver.Tests;
 
 public class RestResultTests : ResultTests<DatabaseRest> { }
@@ -20,11 +24,9 @@ public abstract class ResultTests<T>
             Dictionary<string, object?> param = new() { ["value"] = expectedValue };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
-            var wasSuccessful = result.TryGetValue(out int value);
-            wasSuccessful.Should().BeTrue();
+            ResultValue result = response.FirstValue();
+            result.TryGetValue(out int value).Should().BeTrue();
             value.Should().Be(expectedValue);
         }
     );
@@ -41,11 +43,9 @@ public abstract class ResultTests<T>
             Dictionary<string, object?> param = new() { ["value"] = expectedValue };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
-            var wasSuccessful = result.TryGetValue(out long value);
-            wasSuccessful.Should().BeTrue();
+            ResultValue result = response.FirstValue();
+            result.TryGetValue(out long value).Should().BeTrue();
             value.Should().Be(expectedValue);
         }
     );
@@ -66,13 +66,11 @@ public abstract class ResultTests<T>
         async db => {
             string sql = "select * from <float>($value)";
             Dictionary<string, object?> param = new() { ["value"] = expectedValue };
-            var response = await db.Query(sql, param);
+            DriverResponse response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
-            var wasSuccessful = result.TryGetValue(out float value);
-            wasSuccessful.Should().BeTrue();
+            ResultValue result = response.FirstValue();
+            result.TryGetValue(out float value).Should().BeTrue();
             value.Should().Be(expectedValue);
         }
     );
@@ -95,11 +93,9 @@ public abstract class ResultTests<T>
             Dictionary<string, object?> param = new() { ["value"] = expectedValue };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
-            var wasSuccessful = result.TryGetValue(out double value);
-            wasSuccessful.Should().BeTrue();
+            ResultValue result = response.FirstValue();
+            result.TryGetValue(out double value).Should().BeTrue();
             value.Should().Be(expectedValue);
         }
     );
@@ -113,11 +109,9 @@ public abstract class ResultTests<T>
             Dictionary<string, object?> param = new() { ["value"] = expectedValue };
             var response = await db.Query(sql, param);
 
-            Assert.NotNull(response);
             TestHelper.AssertOk(response);
-            Assert.True(response.TryGetResult(out Result result));
-            var wasSuccessful = result.TryGetValue(out bool value);
-            wasSuccessful.Should().BeTrue();
+            ResultValue result = response.FirstValue();
+            result.TryGetValue(out bool value).Should().BeTrue();
             value.Should().Be(expectedValue);
         }
     );

@@ -32,14 +32,8 @@ public readonly record struct IdScopeAuth(
 
 public readonly record struct User(
     string id,
-    string email);
+    string email,
+    string password);
 
-public class Temperature {
-    public string location;
-    public DateTime date;
-    public float temperature;
-}
-
-public class Field<T> {
-    public List<T> field { get; set; }
-}
+public record Field<T>(
+    List<T> field);

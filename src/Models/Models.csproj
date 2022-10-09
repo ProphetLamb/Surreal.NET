@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<RootNamespace>SurrealDB.Models</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup Label="Nuget Pack Options">
@@ -16,6 +17,12 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Json\Json.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Result\DriverResponse.Enumerator.cs">
+	    <DependentUpon>DriverResponse.cs</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 
 </Project>
