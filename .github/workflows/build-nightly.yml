@@ -3,6 +3,15 @@ name: Build & Test
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "develop"
+      - "feature/**"
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "examples/**"
+      - "*.md"
+      - "*.yml"
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -18,7 +27,7 @@ jobs:
       matrix:
         dotnet:
           [{ ch: "3.1", ver: "netcoreapp31" }, { ch: "6.0", ver: "net60" }]
-        channel: ["nightly", "stable"]
+        channel: ["nightly"]
       fail-fast: false
 
     steps:

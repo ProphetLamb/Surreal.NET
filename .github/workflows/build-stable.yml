@@ -1,0 +1,96 @@
+name: Build & Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "master"
+      - "hotfix/**"
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "examples/**"
+      - "*.md"
+      - "*.yml"
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: true
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet:
+          [{ ch: "3.1", ver: "netcoreapp31" }, { ch: "6.0", ver: "net60" }]
+        channel: ["stable"]
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Initialize Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          # Look to see if there is a cache hit for the corresponding requirements file
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget
+
+      - name: Initialize SurrealDB
+        run: |
+          mkdir -p ~/.local/bin || exit 1
+          mkdir -p ~/tmp || exit 1
+          pushd ~/tmp || exit 1
+
+          curl -sSf https://install.surrealdb.com -o ./surealdb-install.sh
+          chmod +x ./surealdb-install.sh
+          ./surealdb-install.sh ~/.local/bin --${{ matrix.channel }}
+          export PATH="$HOME/.local/bin/:$PATH"
+
+          popd
+
+          surreal version || exit 1
+
+      - name: Initialize .NET SDK
+        run: |
+          curl https://dot.net/v1/dotnet-install.sh -o ~/dotnet-install.sh
+          chmod +x ~/dotnet-install.sh
+          ~/dotnet-install.sh -c ${{ matrix.dotnet.ch }}
+          dotnet --info
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build Solution
+        run: dotnet build --no-restore -f:${{ matrix.dotnet.ver }}
+
+      - name: Execute Unit-Tests
+        run: |
+          dotnet test --no-build -f:${{ matrix.dotnet.ver }} --verbosity normal --logger "trx;LogFileName=$(pwd)/test-results.trx" --collect:"XPlat Code Coverage" /p:CollectCoverage=true /p:CoverletOutputFormat=\"cobertura\" /p:CoverletOutput="$(pwd)/" /p:UseSourceLink=true
+
+      - name: Test Report
+        if: success() || failure()
+        uses: phoenix-actions/test-reporting@v8
+        with:
+          name: results-${{ matrix.dotnet.ver }}-${{ matrix.channel }}
+          path: test-results.trx
+          reporter: dotnet-trx
+          fail-on-error: false
+
+      - name: Test Coverage
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.cobertura.xml
+          flags: unittests
+          name: Surreal.Net
+          fail_ci_if_error: false
+          verbose: true

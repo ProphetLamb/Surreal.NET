@@ -1,4 +1,4 @@
-# Terminologie
+# Terminology
 
 The document specifies common terms and disambiguations, used to refer to certain components and systems exclusively withing this project.
 

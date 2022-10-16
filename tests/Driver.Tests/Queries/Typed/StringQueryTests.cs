@@ -11,22 +11,29 @@ public class RpcStringQueryTests : StringQueryTests<DatabaseRpc> {
 
 public abstract class StringQueryTests<T> : EqualityQueryTests<T, string, string>
     where T : IDatabase, IDisposable, new() {
-
+    
     private static IEnumerable<string?> TestValues {
         get {
-            yield return "Test";
-            yield return "Test123";
-            yield return "Test 123";
-            yield return "Test-123";
-            yield return "Test_123";
-            yield return "Test\n123";
-            yield return "";
+            yield return "TestValue";
+            yield return "Test123Value";
+            // Re-enable when https://github.com/surrealdb/surrealdb/issues/1364 is fixed
+            //yield return "Test Value";
+            //yield return "Test-Value";
+            //yield return "Test_Value";
+            //yield return "Test\nValue";
+            //yield return "Test❤Value";
+            //yield return "Test$Value";
+            //yield return "Test£Value";
+            //yield return "TestहValue";
+            //yield return "Test€Value";
+            //yield return "Test𐍈Value";
+            //yield return "";
         }
     }
 
     public static IEnumerable<object?[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object?[] { RandomString(), e });
+            return TestValues.Select(e => new object?[] { e, e });
         }
     }
 
@@ -38,12 +45,6 @@ public abstract class StringQueryTests<T> : EqualityQueryTests<T, string, string
                 }
             }
         }
-    }
-
-    private static string RandomString(int length = 10) {
-        const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        return new string(Enumerable.Repeat(chars, length)
-           .Select(s => s[ThreadRng.Shared.Next(s.Length)]).ToArray());
     }
 
     public StringQueryTests(ITestOutputHelper logger) : base(logger) {

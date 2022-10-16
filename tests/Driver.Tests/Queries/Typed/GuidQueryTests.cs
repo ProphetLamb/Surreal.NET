@@ -16,13 +16,13 @@ public abstract class GuidQueryTests<T> : EqualityQueryTests<T, Guid, Guid>
     private static IEnumerable<Guid> TestValues {
         get {
             yield return Guid.NewGuid();
-            yield return Guid.Empty;
+            //yield return Guid.Empty; // Re-enable when https://github.com/surrealdb/surrealdb/issues/1364 is fixed
         }
     }
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomGuid(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -34,10 +34,6 @@ public abstract class GuidQueryTests<T> : EqualityQueryTests<T, Guid, Guid>
                 }
             }
         }
-    }
-
-    private static Guid RandomGuid() {
-        return Guid.NewGuid();
     }
 
     public GuidQueryTests(ITestOutputHelper logger) : base(logger) {

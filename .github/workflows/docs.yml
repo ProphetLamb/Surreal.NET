@@ -2,10 +2,12 @@ name: Documentation
 
 on:
   push:
-    branches: [master]
+    branches:
+      - "master"
+      - "doc/**"
     paths-ignore:
-      - ".github/"
-      - "tests/"
+      - ".github/**"
+      - "tests/**"
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1

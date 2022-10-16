@@ -22,7 +22,7 @@ public abstract class DoubleQueryTests <T> : MathQueryTests<T, double, double>
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomDouble(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -38,10 +38,6 @@ public abstract class DoubleQueryTests <T> : MathQueryTests<T, double, double>
 
     protected override string ValueCast() {
         return "<float>";
-    }
-
-    private static double RandomDouble() {
-        return ThreadRng.Shared.NextDouble();
     }
 
     protected override void AssertEquivalency(double a, double b) {

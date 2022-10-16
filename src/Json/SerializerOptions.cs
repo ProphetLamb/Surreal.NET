@@ -31,7 +31,7 @@ public static class SerializerOptions {
             // TODO: Remove this when the server is fixed, see: https://github.com/surrealdb/surrealdb/issues/137
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             UnknownTypeHandling = JsonUnknownTypeHandling.JsonElement,
-            Converters = { new JsonStringEnumConverter(), new DecimalConv(), new DoubleConv(), new SingleConv(), new DateTimeConv(), new DateTimeOffsetConv(), new TimeSpanConv(), new TimeOnlyConv(), new DateOnlyConv() },
+            Converters = { new DecimalConv(), new DoubleConv(), new SingleConv(), new DateTimeConv(), new DateTimeOffsetConv(), new TimeSpanConv(), new TimeOnlyConv(), new DateOnlyConv() },
         };
     }
 }

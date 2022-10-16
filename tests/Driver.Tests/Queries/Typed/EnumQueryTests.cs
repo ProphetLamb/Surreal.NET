@@ -9,7 +9,7 @@ public class RestEnumQueryTests : EnumQueryTests<DatabaseRest> {
     }
 }
 
-public abstract class EnumQueryTests<T> : EqualityQueryTests<T, int, StandardEnum>
+public abstract class EnumQueryTests<T> : EqualityQueryTests<T, StandardEnum, StandardEnum>
     where T : IDatabase, IDisposable, new() {
 
     private static IEnumerable<StandardEnum> TestValues {
@@ -20,7 +20,7 @@ public abstract class EnumQueryTests<T> : EqualityQueryTests<T, int, StandardEnu
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomInt(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -32,10 +32,6 @@ public abstract class EnumQueryTests<T> : EqualityQueryTests<T, int, StandardEnu
                 }
             }
         }
-    }
-
-    private static int RandomInt() {
-        return ThreadRng.Shared.Next();
     }
 
     public EnumQueryTests(ITestOutputHelper logger) : base(logger) {

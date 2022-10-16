@@ -22,7 +22,7 @@ public abstract class LongQueryTests <T> : MathQueryTests<T, long, long>
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomLong(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -38,10 +38,6 @@ public abstract class LongQueryTests <T> : MathQueryTests<T, long, long>
 
     protected override string ValueCast() {
         return "<int>";
-    }
-
-    private static long RandomLong() {
-        return ThreadRng.Shared.NextInt64();
     }
 
     protected override void AssertEquivalency(long a, long b) {

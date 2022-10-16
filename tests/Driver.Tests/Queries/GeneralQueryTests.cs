@@ -219,7 +219,7 @@ GROUP BY RegisteredCountry;";
         async db => {
             MathRequestDocument expectedObject = new() { f1 = 1, f2 = 1, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
-        Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+        Thing thing = new("object", ThreadRng.Shared.Next());
         await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -239,7 +239,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.Epsilon, f2 = float.Epsilon, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
 
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+            Thing thing = new("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -260,7 +260,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.MinValue, f2 = float.MaxValue, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
 
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+            Thing thing = new("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -281,7 +281,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.MaxValue, f2 = float.MinValue, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 - expectedObject.f2 };
 
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+            Thing thing = new("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 - f2) as result FROM $record";
@@ -324,7 +324,7 @@ GROUP BY RegisteredCountry;";
         Logger.WriteLine($"Start {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
 
         var expectedResult = new TestObject<int, int>(i, i);
-        Thing thing = Thing.From("object", expectedResult.Key.ToString());
+        Thing thing = new("object", expectedResult.Key);
 
         var createResponse = await db.Create(thing, expectedResult).ConfigureAwait(false);
         AssertResponse(createResponse, expectedResult);

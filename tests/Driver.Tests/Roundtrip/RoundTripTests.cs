@@ -18,7 +18,7 @@ public abstract class RoundTripTests<T>
     [Fact]
     public async Task CreateRoundTripTest() => await DbHandle<T>.WithDatabase(
         async db => {
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+            Thing thing = new("object", ThreadRng.Shared.Next());
             var response = await db.Create(thing, Expected);
 
             TestHelper.AssertOk(response);
@@ -31,7 +31,7 @@ public abstract class RoundTripTests<T>
     [Fact]
     public async Task CreateAndSelectRoundTripTest() => await DbHandle<T>.WithDatabase(
         async db => {
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+            Thing thing = new("object", ThreadRng.Shared.Next());
             await db.Create(thing, Expected);
             var response = await db.Select(thing);
 
@@ -45,7 +45,7 @@ public abstract class RoundTripTests<T>
     [Fact]
     public async Task CreateAndQueryRoundTripTest() => await DbHandle<T>.WithDatabase(
         async db => {
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+            Thing thing = new("object", ThreadRng.Shared.Next());
             await db.Create(thing, Expected);
             string sql = $"SELECT * FROM \"{thing}\"";
             var response = await db.Query(sql, null);
@@ -60,7 +60,7 @@ public abstract class RoundTripTests<T>
 
     [Fact]
     public async Task CreateAndParameterizedQueryRoundTripTest() => await DbHandle<T>.WithDatabase(async db => {
-        Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
+        Thing thing = new("object", ThreadRng.Shared.Next());
         var rsp = await db.Create(thing, Expected);
         rsp.HasErrors.Should().BeFalse();
         string sql = "SELECT * FROM $thing";
@@ -177,8 +177,9 @@ public class RoundTripObject {
     public TestObject<int, int>? TestObject { get; set; } = new(-100, 1);
     public TestObject<int, int>? NullTestObject { get; set; } = null;
 
-    public int[] IntArray { get; set; } = new [] {-100, 1, 0, -1, 100};
+    public int[] IntArray { get; set; } = {-100, 1, 0, -1, 100};
     public int[]? NullIntArray { get; set; } = null;
+    public string[] StringArray { get; set; } = {"/", ":", "@", "[", "`", "{", "-", " ", "❤", "\n", "\"", "$", "£", "ह", "€", "한",/* "𐍈",*/ "Γ", "²", "¼", "௯", "௰", "༳", "➈", "‗", "⎁", "⎂", "a̱", "a̲", "a̲̲", "ʰ", "◌̲", "◌͝", "◌⃠", "a̷̢̘̩̣̩̹̝͔̹̝̎̄̒͊̄̈̋͐͋̀̕͠͝", "_", "0", "9", "a", "z", "A", "Z"};
 
     public TestObject<int, int>?[] TestObjectArray { get; set; } = new [] { new TestObject<int, int>(-100, 1), new TestObject<int, int>(0, -1), null };
     public TestObject<int, int>?[]? NullTestObjectArray { get; set; } = null;
