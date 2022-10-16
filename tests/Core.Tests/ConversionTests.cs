@@ -122,6 +122,25 @@ public class ConversionTests {
                 yield return new object[] { timeSpanToTest.Ticks, timeSpanToTest };
             }
 
+            // .NET TimeSpans only work up to a resolution of 100ns (0.0000001 seconds).
+            // But surreal can work with a resolution up to 1ns (0.000000001 seconds).
+            // So make sure we can handle these dates with a loss in resolution where times less than 100ns is truncated
+            // Test that we don't throw exceptions when parsing into the 10 picoseconds range just in case we are asked to parse something that isn't actually a Surreal Date Time. 
+            var ts = new TimeSpan(5, 57, 32);
+            yield return new object[] { "05:57:32Z", ts };
+            yield return new object[] { "05:57:32.0000000Z", ts };
+            yield return new object[] { "05:57:32.000000000Z", ts };
+            yield return new object[] { "05:57:32.00000000000Z", ts };
+            
+            ts = ts.Add(TimeSpan.FromTicks(3294704));
+            yield return new object[] { "05:57:32.3294704Z", ts };
+            yield return new object[] { "05:57:32.329470400Z", ts };
+            yield return new object[] { "05:57:32.32947040000Z", ts };
+
+            
+            yield return new object[] { "05:57:32.329470455Z", ts };
+            yield return new object[] { "05:57:32.32947045566Z", ts };
+
             yield return new object[] { null!, null! };
         }
     }
@@ -152,6 +171,36 @@ public class ConversionTests {
 
                 yield return new object[] { dateTimeOffsetToTest.ToUnixTimeSeconds(), dateTimeOffsetToTest.AddTicks(-dateTimeOffsetToTest.Ticks % TimeSpan.TicksPerSecond) };
             }
+
+            // .NET DateTimeOffsets only work up to a resolution of 100ns (0.0000001 seconds).
+            // But surreal can work with a resolution up to 1ns (0.000000001 seconds).
+            // So make sure we can handle these dates with a loss in resolution where times less than 100ns is truncated
+            // Test that we don't throw exceptions when parsing into the 10 picoseconds range just in case we are asked to parse something that isn't actually a Surreal Date Time. 
+            var dto = new DateTimeOffset(2022, 10, 16, 5, 57, 32, TimeSpan.Zero);
+            yield return new object[] { "2022-10-16T05:57:32Z", dto };
+            yield return new object[] { "2022-10-16T05:57:32.0000000Z", dto };
+            yield return new object[] { "2022-10-16T05:57:32.000000000Z", dto };
+            yield return new object[] { "2022-10-16T05:57:32.00000000000Z", dto };
+
+            yield return new object[] { "2022-10-16T05:57:32+00:00", dto };
+            yield return new object[] { "2022-10-16T05:57:32.0000000+00:00", dto };
+            yield return new object[] { "2022-10-16T05:57:32.000000000+00:00", dto };
+            yield return new object[] { "2022-10-16T05:57:32.00000000000+00:00", dto };
+            
+            dto = dto.AddTicks(3294704);
+            yield return new object[] { "2022-10-16T05:57:32.3294704Z", dto };
+            yield return new object[] { "2022-10-16T05:57:32.329470400Z", dto };
+            yield return new object[] { "2022-10-16T05:57:32.32947040000Z", dto };
+
+            yield return new object[] { "2022-10-16T05:57:32.3294704+00:00", dto };
+            yield return new object[] { "2022-10-16T05:57:32.329470400+00:00", dto };
+            yield return new object[] { "2022-10-16T05:57:32.32947040000+00:00", dto };
+            
+            yield return new object[] { "2022-10-16T05:57:32.329470455Z", dto };
+            yield return new object[] { "2022-10-16T05:57:32.32947045566Z", dto };
+            
+            yield return new object[] { "2022-10-16T05:57:32.329470455+00:00", dto };
+            yield return new object[] { "2022-10-16T05:57:32.32947045566+00:00", dto };
 
             yield return new object[] { null!, null! };
         }
@@ -188,6 +237,26 @@ public class ConversionTests {
 
                 yield return new object[] { new DateTimeOffset(dateTimeToTest).ToUnixTimeSeconds(), dateTimeToTest.AddTicks(-dateTimeToTest.Ticks % TimeSpan.TicksPerSecond) };
             }
+
+            // .NET DateTimes only work up to a resolution of 100ns (0.0000001 seconds).
+            // But surreal can work with a resolution up to 1ns (0.000000001 seconds).
+            // So make sure we can handle these dates with a loss in resolution where times less than 100ns is truncated
+            // Test that we don't throw exceptions when parsing into the 10 picoseconds range just in case we are asked to parse something that isn't actually a Surreal Date Time. 
+            var dt = new DateTime(2022, 10, 16, 5, 57, 32, DateTimeKind.Utc);
+            yield return new object[] { "2022-10-16T05:57:32Z", dt };
+            yield return new object[] { "2022-10-16T05:57:32.0000000Z", dt };
+            yield return new object[] { "2022-10-16T05:57:32.000000000Z", dt };
+            yield return new object[] { "2022-10-16T05:57:32.00000000000Z", dt };
+            
+            dt = dt.AddTicks(3294704);
+            yield return new object[] { "2022-10-16T05:57:32.3294704Z", dt };
+            yield return new object[] { "2022-10-16T05:57:32.329470400Z", dt };
+            yield return new object[] { "2022-10-16T05:57:32.32947040000Z", dt };
+
+            
+            yield return new object[] { "2022-10-16T05:57:32.329470455Z", dt };
+            yield return new object[] { "2022-10-16T05:57:32.32947045566Z", dt };
+
 
             yield return new object[] { null!, null! };
         }
@@ -248,6 +317,25 @@ public class ConversionTests {
                 yield return new object[] { timeToTest.ToString("T", CultureInfo.InvariantCulture), timeToTest.Add(new TimeSpan(-timeToTest.Ticks % TimeSpan.TicksPerSecond)) };
                 yield return new object[] { timeToTest.ToString("HH:mm:ss.fffK", CultureInfo.InvariantCulture), timeToTest.Add(new TimeSpan(-timeToTest.Ticks % TimeSpan.TicksPerMillisecond)) };
             }
+
+            // .NET Times only work up to a resolution of 100ns (0.0000001 seconds).
+            // But surreal can work with a resolution up to 1ns (0.000000001 seconds).
+            // So make sure we can handle these dates with a loss in resolution where times less than 100ns is truncated
+            // Test that we don't throw exceptions when parsing into the 10 picoseconds range just in case we are asked to parse something that isn't actually a Surreal Date Time. 
+            var t = new TimeOnly(5, 57, 32);
+            yield return new object[] { "05:57:32Z", t };
+            yield return new object[] { "05:57:32.0000000Z", t };
+            yield return new object[] { "05:57:32.000000000Z", t };
+            yield return new object[] { "05:57:32.00000000000Z", t };
+            
+            t = t.Add(TimeSpan.FromTicks(3294704));
+            yield return new object[] { "05:57:32.3294704Z", t };
+            yield return new object[] { "05:57:32.329470400Z", t };
+            yield return new object[] { "05:57:32.32947040000Z", t };
+
+            
+            yield return new object[] { "05:57:32.329470455Z", t };
+            yield return new object[] { "05:57:32.32947045566Z", t };
 
             yield return new object[] { null!, null! };
         }

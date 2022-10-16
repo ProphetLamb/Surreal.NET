@@ -113,11 +113,11 @@ public static class TimeParsers {
 
     /// <summary>
     /// Parses any ISo8601 like time fraction into ticks.
-    /// A tick is 10us, that is a 7 digit fraction.
+    /// A tick is 100 ns (nanoseconds), that is 0.0000001 seconds.
     /// The fraction is multiplied by 7 then divided by the number of digits.
     /// </summary>
-    public static TextParser<long> IsoTimeFraction { get; } = // TODO: Remove the 9 digit hack once surrealdb/surrealdb#250 is in release 
-        Character.Digit.AtLeastOnce().Select(static c => (long)(Double.Parse(c, NumberStyles.None) * Math.Pow(10, Math.Max(0, 7 - c.Length))));
+    public static TextParser<long> IsoTimeFraction { get; } =
+        Character.Digit.AtLeastOnce().Select(static c => (long)(double.Parse(c.AsSpan(0, Math.Min(7, c.Length)), NumberStyles.None) * Math.Pow(10, Math.Max(0, 7 - c.Length))));
     
     /// <summary>
     /// Parses any ISO8601 like <see cref="TimeOnly"/> `{hour}:{minute}:{second}.{fraction}`
@@ -146,10 +146,10 @@ public static class TimeParsers {
         from minutes in TimeSep.OptionalOrDefault().IgnoreThen(IntDigits).OptionalOrDefault()
         select new TimeSpan(hours, minutes, 0) * (sign == '-' ? -1 : 1);
 
-    private static TextParser<DateTime> IsoDateTimeUtc { get; } =
+    public static TextParser<DateTime> IsoDateTimeUtc { get; } =
         from date in IsoDate
         from time in TimeSegSep.IgnoreThen(IsoTime).OptionalOrDefault()
-        select date.ToDateTime(time, DateTimeKind.Unspecified);
+        select date.ToDateTime(time, DateTimeKind.Utc);
 
     /// <summary>
     /// Parses any ISO8601 <see cref="DateTimeOffset"/> `{year}-{month}-{day}T{hour}:{minute}:{second}{offset}`, 
