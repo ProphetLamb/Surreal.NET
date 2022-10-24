@@ -55,7 +55,7 @@ public static class TestHelper {
             return;
         }
 
-        var errorResponses = rsp.Errors.ToList();
+        var errorResponses = rsp.Oks.ToList();
         var message = $"Expected Error, got {errorResponses.Count} OK responses in {caller}";
 
         Exception ex = new(message);

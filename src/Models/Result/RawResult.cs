@@ -62,6 +62,17 @@ public readonly record struct RawResult {
         err = default;
         return false;
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetAnyError([NotNullWhen(true)] out ErrorResult err) {
+        if (Wrapped == Kind.Error || Wrapped == Kind.TransportError) {
+            err = new(_time, _status!, _detail);
+            return true;
+        }
+
+        err = default;
+        return false;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetTransportError([NotNullWhen(true)] out TransportErrorResult err) {
