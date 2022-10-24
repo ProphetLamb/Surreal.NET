@@ -18,7 +18,7 @@ public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, 
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var resultValue = result.GetObject<bool>();
+            var resultValue = result.AsObject<bool>();
             resultValue.Should().Be(expectedResult);
         }
     );
@@ -36,7 +36,7 @@ public abstract class EqualityQueryTests<T, TKey, TValue> : QueryTests<T, TKey, 
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var resultValue = result.GetObject<bool>();
+            var resultValue = result.AsObject<bool>();
             resultValue.Should().Be(expectedResult);
         }
     );

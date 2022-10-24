@@ -23,7 +23,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var resultValue = result.GetObject<TValue>();
+            var resultValue = result.AsObject<TValue>();
             AssertEquivalency(resultValue, expectedResult);
         }
     );
@@ -41,7 +41,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var value = result.GetObject<TValue>();
+            var value = result.AsObject<TValue>();
             AssertEquivalency(value, expectedResult);
         }
     );
@@ -59,7 +59,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var value = result.GetObject<TValue>();
+            var value = result.AsObject<TValue>();
             AssertEquivalency(value, expectedResult);
         }
     );
@@ -92,7 +92,7 @@ public abstract class MathQueryTests<T, TKey, TValue> : InequalityQueryTests<T, 
             ResultValue result = response.FirstValue();
 
             if (!divisorIsZero) {
-                var value = result.GetObject<TValue>();
+                var value = result.AsObject<TValue>();
                 AssertEquivalency(value, expectedResult);
             } else {
                 Assert.True(false); // TODO: Test for the expected result when doing a divide by zero

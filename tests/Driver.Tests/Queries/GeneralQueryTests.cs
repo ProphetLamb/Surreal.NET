@@ -115,23 +115,8 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            DateTime? doc = result.GetObject<DateTime>();
+            DateTime? doc = result.AsObject<DateTime>();
             doc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(10));
-        }
-    );
-
-    [Fact]
-    public async Task SimpleArrayResultQueryTest() => await DbHandle<T>.WithDatabase(
-        async db => {
-            List<int> expectedObject = new() { 1, 2, 3 };
-            string sql = "SELECT * FROM [1, 2, 3]";
-
-            var response = await db.Query(sql, null);
-
-            TestHelper.AssertOk(response);
-            ResultValue result = response.FirstValue();
-            List<int>? doc = result.GetObject<List<int>>();
-            doc.Should().Equal(expectedObject);
         }
     );
 
@@ -145,7 +130,7 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<OldVehicleResponse>? doc = result.GetObject<List<OldVehicleResponse>>();
+            List<OldVehicleResponse>? doc = result.AsObject<List<OldVehicleResponse>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -162,7 +147,7 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<VehicleTypeResult>? doc = result.GetObject<List<VehicleTypeResult>>();
+            List<VehicleTypeResult>? doc = result.AsObject<List<VehicleTypeResult>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -177,7 +162,7 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<FlatWheelResult>? doc = result.GetObject<List<FlatWheelResult>>();
+            List<FlatWheelResult>? doc = result.AsObject<List<FlatWheelResult>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -195,7 +180,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<GroupedCountries>? doc = result.GetObject<List<GroupedCountries>>();
+            List<GroupedCountries>? doc = result.AsObject<List<GroupedCountries>>();
             doc.Should().HaveCount(2);
         }
     );
@@ -209,7 +194,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            string? doc = result.GetObject<string>();
+            string? doc = result.AsObject<string>();
             doc.Should().BeEquivalentTo("4768b3fc7ac751e03a614e2349abf3bf");
         }
     );
@@ -228,7 +213,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().BeEquivalentTo(expectedResult);
         }
     );
@@ -248,7 +233,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().NotBeNull();
             doc!.result.Should().BeApproximately(expectedResult.result, 0.000001f);
         }
@@ -269,7 +254,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().NotBeNull();
             doc!.result.Should().BeApproximately(expectedResult.result, 0.001f);
         }
@@ -290,7 +275,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().BeEquivalentTo(expectedResult);
         }
     );
@@ -305,7 +290,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            string? doc = result.GetObject<string>();
+            string? doc = result.AsObject<string>();
             doc.Should().NotBeNull();
             doc.Should().Be(expectedResult);
         }
@@ -346,7 +331,7 @@ GROUP BY RegisteredCountry;";
     private static void AssertResponse(DriverResponse response, TestObject<int, int> expectedResult) {
         TestHelper.AssertOk(response);
         Assert.True(response!.TryGetFirstValue(out ResultValue result));
-        TestObject<int, int>? doc = result.GetObject<TestObject<int, int>>();
+        TestObject<int, int>? doc = result.AsObject<TestObject<int, int>>();
         doc.Should().BeEquivalentTo(expectedResult);
     }
 }

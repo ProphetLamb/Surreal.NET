@@ -58,7 +58,7 @@ public abstract class RoundTripTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var returnedDocument = result.GetObject<RoundTripObject>();
+            var returnedDocument = result.AsObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
@@ -75,7 +75,7 @@ public abstract class RoundTripTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var returnedDocument = result.GetObject<RoundTripObject>();
+            var returnedDocument = result.AsObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
@@ -94,7 +94,7 @@ public abstract class RoundTripTests<T>
             response.Should().NotBeNull();
             TestHelper.AssertOk(response);
             response.TryGetFirstValue(out ResultValue result).Should().BeTrue();
-            var returnedDocument = result.GetObject<RoundTripObject>();
+            var returnedDocument = result.AsObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
@@ -114,7 +114,7 @@ public abstract class RoundTripTests<T>
 
         TestHelper.AssertOk(response);
         ResultValue result = response.FirstValue();
-        var returnedDocument = result.GetObject<RoundTripObject>();
+        var returnedDocument = result.AsObject<RoundTripObject>();
         RoundTripObject.AssertAreEqual(document, returnedDocument);
     });
 }

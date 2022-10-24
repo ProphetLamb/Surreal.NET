@@ -18,7 +18,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var resultValue = result.GetObject<bool>();
+            var resultValue = result.AsObject<bool>();
             resultValue.Should().Be(expectedResult);
         }
     );
@@ -36,7 +36,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var resultValue = result.GetObject<bool>();
+            var resultValue = result.AsObject<bool>();
             resultValue.Should().Be(expectedResult);
         }
     );
@@ -54,7 +54,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var resultValue = result.GetObject<bool>();
+            var resultValue = result.AsObject<bool>();
             resultValue.Should().Be(expectedResult);
         }
     );
@@ -72,7 +72,7 @@ public abstract class InequalityQueryTests<T, TKey, TValue> : EqualityQueryTests
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var resultValue = result.GetObject<bool>();
+            var resultValue = result.AsObject<bool>();
             resultValue.Should().Be(expectedResult);
         }
     );

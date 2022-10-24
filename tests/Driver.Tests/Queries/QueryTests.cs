@@ -23,7 +23,7 @@ public abstract class QueryTests<T, TKey, TValue>
             var response = await db.Create(thing, expectedObject);
 
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<TestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<TestObject<TKey, TValue>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -40,7 +40,7 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<TestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<TestObject<TKey, TValue>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -78,7 +78,7 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<TestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<TestObject<TKey, TValue>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -102,7 +102,7 @@ public abstract class QueryTests<T, TKey, TValue>
             var response = await db.Select(thing);
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<ExtendedTestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<ExtendedTestObject<TKey, TValue>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -118,7 +118,7 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TValue? doc = result.GetObject<TValue>();
+            TValue? doc = result.AsObject<TValue>();
             doc.Should().BeEquivalentTo(val1);
         }
     );
@@ -136,7 +136,7 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<ExtendedTestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<ExtendedTestObject<TKey, TValue>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -156,7 +156,7 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<TestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<TestObject<TKey, TValue>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -177,7 +177,7 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<TestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<TestObject<TKey, TValue>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -200,7 +200,7 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            TestObject<TKey, TValue>? doc = result.GetObject<TestObject<TKey, TValue>>();
+            TestObject<TKey, TValue>? doc = result.AsObject<TestObject<TKey, TValue>>();
             Logger.WriteLine("out: {0}", Serialize(doc));
             doc.Should().BeEquivalentTo(expectedObject);
         }
@@ -230,7 +230,7 @@ public abstract class QueryTests<T, TKey, TValue>
             var thing2Response = await db.Query(thing2Sql, vars);
             TestHelper.AssertOk(thing2Response);
             ResultValue thing2Result = thing2Response.FirstValue();
-            Field<TestObject<TKey, TValue>>? thing2Doc = thing2Result.GetObject<Field<TestObject<TKey, TValue>>>();
+            Field<TestObject<TKey, TValue>>? thing2Doc = thing2Result.AsObject<Field<TestObject<TKey, TValue>>>();
             thing2Doc.Should().NotBeNull();
             thing2Doc!.field.First().Should().BeEquivalentTo(expectedObject);
         }

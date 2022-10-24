@@ -68,7 +68,7 @@ public abstract class ManagementQueryTests<T>
 
                 TestHelper.AssertOk(response);
                 ResultValue result = response.FirstValue();
-                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                TestObject<int, string>? doc = result.AsObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOtherObject);
             }
 
@@ -80,7 +80,7 @@ public abstract class ManagementQueryTests<T>
 
                 TestHelper.AssertOk(response);
                 ResultValue result = response.FirstValue();
-                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                TestObject<int, string>? doc = result.AsObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOriginalObject);
             }
 
@@ -110,7 +110,7 @@ public abstract class ManagementQueryTests<T>
 
                 TestHelper.AssertOk(response);
                 ResultValue result = response.FirstValue();
-                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                TestObject<int, string>? doc = result.AsObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOtherObject);
             }
 
@@ -122,7 +122,7 @@ public abstract class ManagementQueryTests<T>
 
                 TestHelper.AssertOk(response);
                 ResultValue result = response.FirstValue();
-                TestObject<int, string>? doc = result.GetObject<TestObject<int, string>>();
+                TestObject<int, string>? doc = result.AsObject<TestObject<int, string>>();
                 doc.Should().BeEquivalentTo(expectedOriginalObject);
             }
 
