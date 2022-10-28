@@ -28,9 +28,9 @@ public abstract class RoundTripTests<T>
 
     private static IEnumerable<RoundTripObject> DocumentsToTest {
         get {
-            yield return new RoundTripObject();
+            //yield return new RoundTripObject();
 
-            for (int i = 4; i < 9; i++) {
+            for (int i = 8; i < 9; i++) {
                 var arraySize = 2 << i;
                 var largeDocument = new RoundTripObject {
                     StringArray = new string[arraySize],
@@ -122,7 +122,7 @@ public abstract class RoundTripTests<T>
     [MemberData(nameof(Documents))]
     public async Task CreateManyAndQueryRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(
         async db => {
-            var count = 1;//10;
+            var count = 10;
             Logger.WriteLine("Document size in bytes: {0} x {1}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char), count);
 
             for (int i = 0; i < count; i++) {
@@ -136,7 +136,8 @@ public abstract class RoundTripTests<T>
             response.Should().NotBeNull();
             TestHelper.AssertOk(response);
             response.TryGetFirstValue(out ResultValue result).Should().BeTrue();
-            var returnedDocuments = result.AsEnumerable<RoundTripObject>();
+            var returnedDocuments = result.AsEnumerable<RoundTripObject>().ToList();
+            returnedDocuments.Count.Should().Be(count);
             foreach (var returnedDocument in returnedDocuments) {
                 RoundTripObject.AssertAreEqual(document, returnedDocument);
             }

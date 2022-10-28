@@ -13,6 +13,7 @@ public sealed class WsStream : Stream {
     private int _prefixConsumed;
 
     private readonly WebSocket _ws;
+    private bool endOfMessage = false;
 
     public override bool CanRead => true;
     public override bool CanSeek => false;
@@ -40,7 +41,7 @@ public sealed class WsStream : Stream {
     public override int Read(Span<byte> buffer) {
         int read = 0;
         // consume the prefix
-        ReadOnlySpan<byte> pref = ConsumePrefix(buffer.Length);
+        ReadOnlySpan<byte> pref = ConsumePrefixAsSpan(buffer.Length);
         if (!pref.IsEmpty) {
             pref.CopyTo(buffer);
             buffer = buffer.Slice(pref.Length);
@@ -61,7 +62,7 @@ public sealed class WsStream : Stream {
     public int Read(Memory<byte> buffer) {
         int read = 0;
         // consume the prefix
-        ReadOnlySpan<byte> pref = ConsumePrefix(buffer.Length);
+        ReadOnlySpan<byte> pref = ConsumePrefixAsSpan(buffer.Length);
         if (!pref.IsEmpty) {
             pref.CopyTo(buffer.Span);
             buffer = buffer.Slice(pref.Length);
@@ -81,21 +82,30 @@ public sealed class WsStream : Stream {
     }
 
     public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) {
+        var pref = ConsumePrefix(buffer.Length);
+        if (!pref.IsEmpty) {
+            pref.CopyTo(buffer);
+            return pref.Length;
+        }
+
         int read = 0;
-        while (!buffer.IsEmpty) {
+        while (!buffer.IsEmpty && !endOfMessage) {
             ValueWebSocketReceiveResult rsp = await _ws.ReceiveAsync(buffer, cancellationToken);
             buffer = buffer.Slice(rsp.Count);
             read += rsp.Count;
 
-            if (rsp.EndOfMessage) {
-                break;
-            }
+            endOfMessage = rsp.EndOfMessage;
         }
 
         return read;
     }
 
-    private ReadOnlySpan<byte> ConsumePrefix(int length) {
+    private ReadOnlySpan<byte> ConsumePrefixAsSpan(int length) {
+        var prefix = ConsumePrefix(length);
+        return prefix.Span;
+    }
+
+    private ReadOnlyMemory<byte> ConsumePrefix(int length) {
         int len = _prefix.Length;
         int con = _prefixConsumed;
         if (con == len) {
@@ -104,7 +114,7 @@ public sealed class WsStream : Stream {
         int rem = len - con;
         int inc = Math.Min(rem, length);
         _prefixConsumed = con + inc;
-        return _prefix.Span.Slice(con, inc);
+        return _prefix.Slice(con, inc);
     }
 
     private void DisposePrefix() {
