@@ -57,7 +57,9 @@ public abstract class QueryTests<T, TKey, TValue>
 
             TestHelper.AssertOk(deleteResponse);
 
-            var selectResponse = await db.Select(thing);
+            string sql = "SELECT * FROM $thing";
+            Dictionary<string, object?> param = new() { ["thing"] = thing, };
+            var selectResponse = await db.Query(sql, param);
             TestHelper.AssertOk(selectResponse);
             selectResponse.TryGetFirstValue(out ResultValue result).Should().BeTrue();
             result.Inner.ValueKind.Should().Be(JsonValueKind.Array);
