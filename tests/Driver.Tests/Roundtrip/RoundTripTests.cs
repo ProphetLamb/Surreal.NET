@@ -30,7 +30,7 @@ public abstract class RoundTripTests<T>
         get {
             //yield return new RoundTripObject();
 
-            for (int i = 8; i < 9; i++) {
+            for (int i = 4; i < 9; i++) {
                 var arraySize = 2 << i;
                 var largeDocument = new RoundTripObject {
                     StringArray = new string[arraySize],

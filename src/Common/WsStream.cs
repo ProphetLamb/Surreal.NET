@@ -13,7 +13,7 @@ public sealed class WsStream : Stream {
     private int _prefixConsumed;
 
     private readonly WebSocket _ws;
-    private bool endOfMessage = false;
+    public bool EndOfMessage { get; private set; } = false;
 
     public override bool CanRead => true;
     public override bool CanSeek => false;
@@ -89,12 +89,11 @@ public sealed class WsStream : Stream {
         }
 
         int read = 0;
-        while (!buffer.IsEmpty && !endOfMessage) {
+        if (!EndOfMessage) {
             ValueWebSocketReceiveResult rsp = await _ws.ReceiveAsync(buffer, cancellationToken);
-            buffer = buffer.Slice(rsp.Count);
-            read += rsp.Count;
+            read = rsp.Count;
 
-            endOfMessage = rsp.EndOfMessage;
+            EndOfMessage = rsp.EndOfMessage;
         }
 
         return read;

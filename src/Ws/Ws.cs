@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
+using SurrealDB.Common;
+
 namespace SurrealDB.Ws;
 
 public sealed class Ws : IDisposable, IAsyncDisposable {
@@ -84,6 +86,12 @@ public sealed class Ws : IDisposable, IAsyncDisposable {
             if (!handler.Persistent) {
                 // persistent handlers are for notifications and are not removed automatically
                 Unregister(handler);
+            }
+
+            if (stream is WsStream wsStream) {
+                while (!wsStream.EndOfMessage) {
+                    await Task.Delay(13, stoppingToken);
+                }
             }
         }
     }
