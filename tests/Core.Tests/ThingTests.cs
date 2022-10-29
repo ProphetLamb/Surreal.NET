@@ -191,4 +191,30 @@ public class ThingTests {
         thing.HasKey.Should().BeTrue();
         thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(unescapedKey)}");
     }
+
+    [Fact]
+    public void NullEqualsDefaultThing() {
+        Thing nullThing = new(null);
+        Thing defaultThing = default;
+        defaultThing.Should().BeEquivalentTo(nullThing);
+    }
+
+    [Fact]
+    public void NullThingPropertyAccessors() {
+        Thing t = default;
+        t.Table.ToString().Should().BeEmpty();
+        t.TableAndSeparator.ToString().Should().BeEmpty();
+        t.Key.ToString().Should().BeEmpty();
+        t.HasKey.Should().BeFalse();
+    }
+
+    [Fact]
+    public void NullThingSerialized() {
+        Thing t = default;
+        var json = JsonSerializer.Serialize(t, SerializerOptions.Shared);
+        json.Should().Be("\"\"");
+        Thing empty = new("");
+        var emptyJson = JsonSerializer.Serialize(empty, SerializerOptions.Shared);
+        emptyJson.Should().BeEquivalentTo(json);
+    }
 }
