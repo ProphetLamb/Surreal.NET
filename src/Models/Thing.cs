@@ -23,11 +23,12 @@ public readonly record struct Thing {
     public const char CHAR_SUF = '⟩';
 
     private readonly int _split;
-    private readonly string _inner;
+    private readonly string? _inner;
 
     public Thing(string? thing) {
-        _split = thing is null ? -1 : thing.IndexOf(CHAR_SEP);
-        _inner = thing ?? "";
+        // thing of null string should equal `default` thing!
+        _split = thing.AsSpan().IndexOf(CHAR_SEP) + 1;
+        _inner = thing;
     }
 
     public Thing(
@@ -62,7 +63,7 @@ public readonly record struct Thing {
     /// <summary>
     /// Returns the Table part of the Thing
     /// </summary>
-    public ReadOnlySpan<char> Table => HasKey ? _inner.AsSpan(0, _split): _inner.AsSpan();
+    public ReadOnlySpan<char> Table => GetKeyOffset(out int rec) ? _inner.AsSpan(0, rec - 1) : _inner.AsSpan();
 
     /// <summary>
     /// Returns the Key part of the Thing.
@@ -74,14 +75,14 @@ public readonly record struct Thing {
     /// </summary>
     public ReadOnlySpan<char> TableAndSeparator => GetKeyOffset(out int rec) ? _inner.AsSpan(0, rec) : _inner;
 
-    public bool HasKey => _split >= 0;
+    public bool HasKey => GetKeyOffset(out _);
 
-    public int Length => _inner.Length;
+    public int Length => _inner?.Length ?? 0;
 
     /// <summary>
     /// Indicates whether the <see cref="Key"/> is escaped. false if no <see cref="Key"/> is present.
     /// </summary>
-    public bool IsKeyEscaped => GetKeyOffset(out int rec) ? IsStringEscaped(Key) : false;
+    public bool IsKeyEscaped => GetKeyOffset(out _) ? IsStringEscaped(Key) : false;
 
     /// <summary>
     /// Returns the unescaped key, if the key is escaped
@@ -142,17 +143,14 @@ public readonly record struct Thing {
     }
 
     [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool GetKeyOffset(out int offset) {
-        offset = _split + 1;
-        return HasKey;
+        offset = _split;
+        return offset > 0;
     }
 
     public static implicit operator Thing(in string? thing) {
-        if (thing == null) {
-            return default;
-        }
-
-        return new Thing(thing);
+        return new(thing);
     }
 
     // Double implicit operators can result in syntax problems, so we use the explicit operator instead.
@@ -188,7 +186,7 @@ public readonly record struct Thing {
     }
 
     public override string ToString() {
-        return _inner;
+        return _inner ?? "";
     }
 
     public sealed class ThingConverter : JsonConverter<Thing> {
