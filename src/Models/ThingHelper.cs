@@ -10,10 +10,14 @@ using SurrealDB.Json;
 namespace SurrealDB.Models;
 
 public static class ThingExtensions {
+    /// <summary>Creates a <see cref="Thing"/> from a table and key.</summary>
     public static Thing ToThing<T>(in this (string Table, T Key) thing) {
         return Thing.From(thing.Table, thing.Key);
     }
 
+    /// <summary>Escapes the thing into one or two URI path components.</summary>
+    /// <remarks>The first component is the <see cref="Thing.Table"/>. If <see cref="Thing.HasKey"/>,
+    /// then the second component is the <see cref="Thing.Key"/>.</remarks>
     public static string ToUri(in this Thing thing) {
         var (table, key) = thing;
         return (!table.IsEmpty, thing.HasKey) switch {
@@ -38,7 +42,7 @@ internal static class ThingHelper {
     public static string SerializeKey<T>(in T key) {
         if (IsStringableType(in key)) {
             // the ToString method is cheap
-            var text = key.ToString();
+            var text = key.ToString()!;
             return RequiresEscape(text) ? EscapeKey(text) : text;
         }
 
@@ -56,7 +60,7 @@ internal static class ThingHelper {
         if (value is not null && t == typeof(object)) {
             t = value.GetType();
         }
-        // decimal is no primitive
+        // string and ROM are known to have a good ToString representation
         return t == typeof(string) || t == typeof(ReadOnlyMemory<char>);
     }
 

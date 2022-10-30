@@ -55,7 +55,7 @@ public readonly record struct Thing {
     /// <summary>Creates a <see cref="Thing"/> from a table and key.</summary>
     /// <param name="table">The table.</param>
     /// <param name="key">The key struct.</param>
-    /// <remarks>The key is omitted if null or empty json.</remarks>
+    /// <remarks>The key is omitted if null or empty json. The key is treated as a string where <typeparamref name="T"/> is <see cref="string"/>, or <see cref="ReadOnlyMemory{Char}"/>.</remarks>
     public static Thing From<T>(ReadOnlySpan<char> table, T key) {
         return new(table, ThingHelper.SerializeKey(key));
     }
@@ -89,6 +89,7 @@ public readonly record struct Thing {
         key = Key;
     }
 
+    /// <summary>Iterates over string representation.</summary>
     public ReadOnlySpan<char>.Enumerator GetEnumerator() {
         return _inner.AsSpan().GetEnumerator();
     }
@@ -100,7 +101,7 @@ public readonly record struct Thing {
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool GetKeyOffset(out int offset) {
+    private bool GetKeyOffset(out int offset) {
         offset = _split;
         return _split > 0;
     }
