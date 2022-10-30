@@ -289,10 +289,13 @@ GROUP BY RegisteredCountry;";
             var response = await db.Query(sql, null);
 
             TestHelper.AssertOk(response);
-            ResultValue result = response.FirstValue();
-            string? doc = result.AsObject<string>();
-            doc.Should().NotBeNull();
-            doc.Should().Be(expectedResult);
+            // we execute two stmts, let and select.
+            // let should return null
+            response.Oks.First().Value.AsObject<object>().Should().BeNull();
+            // select should be array of one string
+            var res = response.Oks.Skip(1).First().Value.AsEnumerable<string>();
+            res.Count.Should().Be(1);
+            res.First().Should().Be(expectedResult);
         }
     );
 
