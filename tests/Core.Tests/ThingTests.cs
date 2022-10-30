@@ -69,7 +69,7 @@ public class ThingTests {
     public void TableStringNoKeyThing() {
         var table = "TableName";
 
-        var thing = new Thing(table);
+        Thing thing = table;
         Logger.WriteLine("Thing: {0}", thing);
 
         thing.ToString().Should().BeEquivalentTo(table);
@@ -87,7 +87,7 @@ public class ThingTests {
         var table = "TableName";
         var expectedThing = $"{table}:{key}";
 
-        var thing = new Thing(table, key);
+        Thing thing = (table, key);
         Logger.WriteLine("Thing: {0}", thing);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -105,7 +105,7 @@ public class ThingTests {
         var table = "TableName";
         var expectedThing = $"{table}:{key}";
 
-        var thing = new Thing(expectedThing);
+        Thing thing = expectedThing;
         Logger.WriteLine("Thing: {0}", thing);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -121,10 +121,10 @@ public class ThingTests {
     [MemberData(nameof(ComplexStringKeys))]
     public void TableAndStringKeyWithComplexCharacterThing(string key) {
         var table = "TableName";
-        var escapedKey = $"{Thing.CHAR_PRE}{key}{Thing.CHAR_SUF}";
+        var escapedKey = $"{ThingHelper.PREFIX}{key}{ThingHelper.SUFFIX}";
         var expectedThing = $"{table}:{escapedKey}";
 
-        var thing = new Thing(table, key);
+        var thing = Thing.From(table, key);
         Logger.WriteLine("Thing: {0}", thing);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -140,10 +140,10 @@ public class ThingTests {
     [MemberData(nameof(ComplexStringKeys))]
     public void TableAndStringKeyAlreadyEscapedThing(string key) {
         var table = "TableName";
-        var escapedKey = $"{Thing.CHAR_PRE}{key}{Thing.CHAR_SUF}";
+        var escapedKey = $"{ThingHelper.PREFIX}{key}{ThingHelper.SUFFIX}";
         var expectedThing = $"{table}:{escapedKey}";
 
-        var thing = new Thing(table, escapedKey);
+        var thing = Thing.From(table, escapedKey);
         Logger.WriteLine("Thing: {0}", thing);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -161,7 +161,7 @@ public class ThingTests {
         var table = "TableName";
         var expectedThing = $"{table}:{key}";
 
-        var thing = new Thing(table, key);
+        var thing = Thing.From(table, key);
         Logger.WriteLine("Thing: {0} ({1})", thing, type);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -177,10 +177,10 @@ public class ThingTests {
     [MemberData(nameof(ObjectKeys))]
     public void TableAndObjectKeyThing(object key, string unescapedKey, bool shouldBeEscaped, Type type) {
         var table = "TableName";
-        string expectedKey = shouldBeEscaped ? $"{Thing.CHAR_PRE}{unescapedKey}{Thing.CHAR_SUF}" : unescapedKey;
-        string expectedThing = $"{table}{Thing.CHAR_SEP}{expectedKey}";
+        string expectedKey = shouldBeEscaped ? $"{ThingHelper.PREFIX}{unescapedKey}{ThingHelper.SUFFIX}" : unescapedKey;
+        string expectedThing = $"{table}{ThingHelper.SEPARATOR}{expectedKey}";
 
-        var thing = new Thing(table, key);
+        var thing = (table, key).ToThing();
         Logger.WriteLine("Thing: {0} ({1})", thing, type);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -193,19 +193,12 @@ public class ThingTests {
     }
 
     [Fact]
-    public void NullEqualsDefaultThing() {
-        Thing nullThing = new(null);
-        Thing defaultThing = default;
-        defaultThing.Should().BeEquivalentTo(nullThing);
-    }
-
-    [Fact]
     public void NullThingPropertyAccessors() {
         Thing t = default;
+        t.HasKey.Should().BeFalse();
         t.Table.ToString().Should().BeEmpty();
         t.TableAndSeparator.ToString().Should().BeEmpty();
         t.Key.ToString().Should().BeEmpty();
-        t.HasKey.Should().BeFalse();
     }
 
     [Fact]
@@ -213,7 +206,7 @@ public class ThingTests {
         Thing t = default;
         var json = JsonSerializer.Serialize(t, SerializerOptions.Shared);
         json.Should().Be("\"\"");
-        Thing empty = new("");
+        Thing empty = "";
         var emptyJson = JsonSerializer.Serialize(empty, SerializerOptions.Shared);
         emptyJson.Should().BeEquivalentTo(json);
     }
