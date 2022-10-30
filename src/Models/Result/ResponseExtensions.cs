@@ -20,7 +20,7 @@ public static class ResponseExtensions {
 
     public static bool TryGetFirstValue(in this Result.DriverResponse rsp, out ResultValue result) {
         foreach (OkResult res in rsp.Oks) {
-            if (res.Value.Inner.ValueKind is not (JsonValueKind.Undefined or JsonValueKind.Null)) {
+            if (res.Value.Inner.ValueKind is not JsonValueKind.Undefined) {
                 result = res.Value;
                 return true;
             }
