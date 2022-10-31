@@ -110,14 +110,20 @@ internal sealed class WsChannelTx {
             using (var h = await msg.LockAsync(ct)) {
                 // write the first part to the message
                 await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct);
+                // indicate, that a message has been received
+                msg.SetReceived(result);
             }
 
-            while (!result.EndOfMessage) {
+            while (!result.EndOfMessage && !ct.IsCancellationRequested) {
                 // receive more parts
                 result = await input.ReceiveAsync(buffer, ct).ConfigureAwait(false);
                 using var h = await msg.LockAsync(ct);
                 await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct);
-                h.EndOfMessage = result.EndOfMessage;
+                msg.SetReceived(result);
+                if (result.EndOfMessage) {
+                    msg.SetEndOfMessage();
+                }
+                ct.ThrowIfCancellationRequested();
             }
 
             // finish adding the message to the output
@@ -167,12 +173,13 @@ internal sealed class WsChannelTx {
 public sealed class WsMessage : IDisposable, IAsyncDisposable {
     private readonly MemoryStream _buffer;
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private readonly TaskCompletionSource _endOfMessageEvent = new();
-    private bool _endOfMessage;
+    private readonly TaskCompletionSource<object?> _endOfMessageEvent = new();
+    private TaskCompletionSource<WebSocketReceiveResult> _receivedEvent = new();
+    private int _endOfMessage;
 
     internal WsMessage(MemoryStream buffer) {
         _buffer = buffer;
-        _endOfMessage = false;
+        _endOfMessage = 0;
     }
 
     public async Task<Handle> LockAsync(CancellationToken ct) {
@@ -197,8 +204,25 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
         return _buffer.DisposeAsync();
     }
 
+    internal void SetEndOfMessage() {
+        var endOfMessage = Interlocked.Exchange(ref _endOfMessage, 1);
+        if (endOfMessage == 0) {
+            // finish the AwaitEndOfMessage task
+            _endOfMessageEvent.SetResult(null);
+        }
+    }
+
+    internal void SetReceived(WebSocketReceiveResult count) {
+        var receivedEvent = Interlocked.Exchange(ref _receivedEvent, new());
+        receivedEvent.SetResult(count);
+    }
+
     public Task EndOfMessageAsync(CancellationToken ct = default) {
         return ct.CanBeCanceled ? _endOfMessageEvent.Task.WaitAsync(ct) : _endOfMessageEvent.Task;
+    }
+
+    public Task<WebSocketReceiveResult> ReceivedAsync(CancellationToken ct = default) {
+        return ct.CanBeCanceled ? _receivedEvent.Task.WaitAsync(ct) : _receivedEvent.Task;
     }
 
     public readonly struct Handle : IDisposable {
@@ -210,16 +234,7 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
 
         public MemoryStream Stream => _msg._buffer;
 
-        public bool EndOfMessage {
-            get => _msg._endOfMessage;
-            set {
-                if (!_msg._endOfMessage && value) {
-                    // finish the AwaitEndOfMessage task
-                    _msg._endOfMessageEvent.SetResult();
-                }
-                _msg._endOfMessage = value;
-            }
-        }
+        public bool EndOfMessage => _msg._endOfMessage == 0;
 
         public void Dispose() {
             _msg._lock.Release();
