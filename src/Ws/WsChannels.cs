@@ -217,12 +217,12 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
         receivedEvent.SetResult(count);
     }
 
-    public Task EndOfMessageAsync(CancellationToken ct = default) {
-        return ct.CanBeCanceled ? _endOfMessageEvent.Task.WaitAsync(ct) : _endOfMessageEvent.Task;
+    public Task EndOfMessageAsync() {
+        return _endOfMessageEvent.Task;
     }
 
-    public Task<WebSocketReceiveResult> ReceivedAsync(CancellationToken ct = default) {
-        return ct.CanBeCanceled ? _receivedEvent.Task.WaitAsync(ct) : _receivedEvent.Task;
+    public Task<WebSocketReceiveResult> ReceivedAsync() {
+        return _receivedEvent.Task;
     }
 
     public readonly struct Handle : IDisposable {
