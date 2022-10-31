@@ -29,7 +29,7 @@ public sealed class Ws : IDisposable, IAsyncDisposable {
     /// <summary>
     /// Sends the request and awaits a response from the server
     /// </summary>
-    public async Task<(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm)> RequestOnce(string id, Stream request, CancellationToken ct = default) {
+    public async Task<(RspHeader rsp, NtyHeader nty, Stream stm)> RequestOnce(string id, Stream request, CancellationToken ct = default) {
         ResponseHandler handler = new(id, ct);
         Register(handler);
         await _tx.Tw(request, ct);
@@ -39,7 +39,7 @@ public sealed class Ws : IDisposable, IAsyncDisposable {
     /// <summary>
     /// Sends the request and awaits responses from the server until manually canceled using the cancellation token
     /// </summary>
-    public async IAsyncEnumerable<(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm)> RequestPersists(string id, Stream request, [EnumeratorCancellation] CancellationToken ct = default) {
+    public async IAsyncEnumerable<(RspHeader rsp, NtyHeader nty, Stream stm)> RequestPersists(string id, Stream request, [EnumeratorCancellation] CancellationToken ct = default) {
         NotificationHandler handler = new(this, id, ct);
         Register(handler);
         await _tx.Tw(request, ct);

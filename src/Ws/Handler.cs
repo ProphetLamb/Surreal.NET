@@ -6,11 +6,11 @@ internal interface IHandler : IDisposable {
 
     public bool Persistent { get; }
 
-    public void Handle(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm);
+    public void Handle(RspHeader rsp, NtyHeader nty, Stream stm);
 }
 
 internal sealed class ResponseHandler : IHandler {
-    private readonly TaskCompletionSource<(WsManager.RspHeader, WsManager.NtyHeader, Stream)> _tcs = new();
+    private readonly TaskCompletionSource<(RspHeader, NtyHeader, Stream)> _tcs = new();
     private readonly string _id;
     private readonly CancellationToken _ct;
 
@@ -19,13 +19,13 @@ internal sealed class ResponseHandler : IHandler {
         _ct = ct;
     }
 
-    public Task<(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm)> Task => _tcs!.Task;
+    public Task<(RspHeader rsp, NtyHeader nty, Stream stm)> Task => _tcs!.Task;
 
     public string Id => _id;
 
     public bool Persistent => false;
 
-    public void Handle(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm) {
+    public void Handle(RspHeader rsp, NtyHeader nty, Stream stm) {
         _tcs.SetResult((rsp, nty, stm));
     }
 
@@ -35,10 +35,10 @@ internal sealed class ResponseHandler : IHandler {
 
 }
 
-internal class NotificationHandler : IHandler, IAsyncEnumerable<(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm)> {
+internal class NotificationHandler : IHandler, IAsyncEnumerable<(RspHeader rsp, NtyHeader nty, Stream stm)> {
     private readonly Ws _mediator;
     private readonly CancellationToken _ct;
-    private TaskCompletionSource<(WsManager.RspHeader, WsManager.NtyHeader, Stream)> _tcs = new();
+    private TaskCompletionSource<(RspHeader, NtyHeader, Stream)> _tcs = new();
     public NotificationHandler(Ws mediator, string id, CancellationToken ct) {
         _mediator = mediator;
         Id = id;
@@ -48,7 +48,7 @@ internal class NotificationHandler : IHandler, IAsyncEnumerable<(WsManager.RspHe
     public string Id { get; }
     public bool Persistent => true;
 
-    public void Handle(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm) {
+    public void Handle(RspHeader rsp, NtyHeader nty, Stream stm) {
         _tcs.SetResult((rsp, nty, stm));
         _tcs = new();
     }
@@ -57,9 +57,9 @@ internal class NotificationHandler : IHandler, IAsyncEnumerable<(WsManager.RspHe
         _tcs.TrySetCanceled();
     }
 
-    public async IAsyncEnumerator<(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm)> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
+    public async IAsyncEnumerator<(RspHeader rsp, NtyHeader nty, Stream stm)> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
         while (!_ct.IsCancellationRequested) {
-            (WsManager.RspHeader, WsManager.NtyHeader, Stream) res;
+            (RspHeader, NtyHeader, Stream) res;
             try {
                 res = await _tcs.Task;
             } catch (OperationCanceledException) {
