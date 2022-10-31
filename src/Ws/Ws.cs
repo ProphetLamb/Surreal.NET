@@ -6,7 +6,7 @@ namespace SurrealDB.Ws;
 
 public sealed class Ws : IDisposable, IAsyncDisposable {
     private readonly CancellationTokenSource _cts = new();
-    private readonly WsTx _tx = new();
+    private readonly WsManager _tx = new();
     private readonly ConcurrentDictionary<string, IHandler> _handlers = new();
     private Task _recv = Task.CompletedTask;
 
@@ -29,7 +29,7 @@ public sealed class Ws : IDisposable, IAsyncDisposable {
     /// <summary>
     /// Sends the request and awaits a response from the server
     /// </summary>
-    public async Task<(WsTx.RspHeader rsp, WsTx.NtyHeader nty, Stream stm)> RequestOnce(string id, Stream request, CancellationToken ct = default) {
+    public async Task<(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm)> RequestOnce(string id, Stream request, CancellationToken ct = default) {
         ResponseHandler handler = new(id, ct);
         Register(handler);
         await _tx.Tw(request, ct);
@@ -39,7 +39,7 @@ public sealed class Ws : IDisposable, IAsyncDisposable {
     /// <summary>
     /// Sends the request and awaits responses from the server until manually canceled using the cancellation token
     /// </summary>
-    public async IAsyncEnumerable<(WsTx.RspHeader rsp, WsTx.NtyHeader nty, Stream stm)> RequestPersists(string id, Stream request, [EnumeratorCancellation] CancellationToken ct = default) {
+    public async IAsyncEnumerable<(WsManager.RspHeader rsp, WsManager.NtyHeader nty, Stream stm)> RequestPersists(string id, Stream request, [EnumeratorCancellation] CancellationToken ct = default) {
         NotificationHandler handler = new(this, id, ct);
         Register(handler);
         await _tx.Tw(request, ct);

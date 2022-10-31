@@ -9,7 +9,7 @@ using SurrealDB.Json;
 
 namespace SurrealDB.Ws;
 
-public sealed class WsTx : IDisposable {
+public sealed class WsManager : IDisposable {
     private readonly ClientWebSocket _ws = new();
 
     public static int DefaultBufferSize => 16 * 1024;
