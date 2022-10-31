@@ -9,7 +9,7 @@ using Microsoft.IO;
 namespace SurrealDB.Ws;
 
 /// <summary>Sends messages from a channel to a websocket server.</summary>
-internal sealed class WsChannelRx {
+public sealed class WsChannelRx {
     private readonly ClientWebSocket _ws;
     private readonly ChannelReader<BufferedStreamReader> _in;
     private readonly object _lock = new();
@@ -24,7 +24,7 @@ internal sealed class WsChannelRx {
     private static async Task Execute(ClientWebSocket output, ChannelReader<BufferedStreamReader> input, CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
-            var reader = await input.ReadAsync(ct);
+            var reader = await input.ReadAsync(ct).ConfigureAwait(false);
 
             bool isFinalBlock = false;
             while (!isFinalBlock && !ct.IsCancellationRequested) {
@@ -81,23 +81,26 @@ internal sealed class WsChannelRx {
 }
 
 /// <summary>Receives messages from a websocket server and passes them to a channel</summary>
-internal sealed class WsChannelTx {
+public sealed class WsChannelTx {
     private readonly ClientWebSocket _ws;
     private readonly ChannelWriter<WsMessage> _out;
+    private readonly RecyclableMemoryStreamManager _memoryManager;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsChannelTx(ClientWebSocket ws, ChannelWriter<WsMessage> @out) {
+    public WsChannelTx(ClientWebSocket ws, ChannelWriter<WsMessage> @out, RecyclableMemoryStreamManager memoryManager) {
         _ws = ws;
         _out = @out;
+        _memoryManager = memoryManager;
     }
 
-    private static async Task Execute(ClientWebSocket input, ChannelWriter<WsMessage> output, CancellationToken ct) {
+    private static async Task Execute(
+        RecyclableMemoryStreamManager memoryManager,
+        ClientWebSocket input,
+        ChannelWriter<WsMessage> output,
+        CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
-        // the MemoryManager associated with the streams
-        RecyclableMemoryStreamManager memoryManager = new();
-
         while (!ct.IsCancellationRequested) {
             var buffer = ArrayPool<byte>.Shared.Rent(BufferedStreamReader.BUFFER_SIZE);
             // receive the first part
@@ -107,9 +110,9 @@ internal sealed class WsChannelTx {
             WsMessage msg = new(new RecyclableMemoryStream(memoryManager));
             // begin adding the message to the output
             var writeOutput = output.WriteAsync(msg, ct);
-            using (var h = await msg.LockAsync(ct)) {
+            using (var h = await msg.LockAsync(ct).ConfigureAwait(false)) {
                 // write the first part to the message
-                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct);
+                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).ConfigureAwait(false);
                 // indicate, that a message has been received
                 msg.SetReceived(result);
             }
@@ -117,8 +120,8 @@ internal sealed class WsChannelTx {
             while (!result.EndOfMessage && !ct.IsCancellationRequested) {
                 // receive more parts
                 result = await input.ReceiveAsync(buffer, ct).ConfigureAwait(false);
-                using var h = await msg.LockAsync(ct);
-                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct);
+                using var h = await msg.LockAsync(ct).ConfigureAwait(false);
+                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).ConfigureAwait(false);
                 msg.SetReceived(result);
                 if (result.EndOfMessage) {
                     msg.SetEndOfMessage();
@@ -141,7 +144,7 @@ internal sealed class WsChannelTx {
         lock (_lock) {
             ThrowIfConnected();
             _cts = new();
-            _execute = Execute(_ws, _out, _cts.Token);
+            _execute = Execute(_memoryManager, _ws, _out, _cts.Token);
         }
     }
 
@@ -183,7 +186,7 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
     }
 
     public async Task<Handle> LockAsync(CancellationToken ct) {
-        await _lock.WaitAsync(ct);
+        await _lock.WaitAsync(ct).ConfigureAwait(false);
         return new(this);
     }
 
