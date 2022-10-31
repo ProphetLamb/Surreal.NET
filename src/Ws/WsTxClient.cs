@@ -12,20 +12,21 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Listens for <see cref="WsMessage"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
-internal sealed class WsTxMessageMediator {
+internal sealed class WsTxClient : IDisposable {
     private readonly ChannelReader<WsMessage> _in;
-    private readonly WsChannelTx _tx;
-    private ConcurrentDictionary<string, IHandler> _handlers = new();
+    private readonly WsTxReader _tx;
+    private readonly ConcurrentDictionary<string, IHandler> _handlers = new();
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public static int MaxHeaderBytes => 1024;
-
-    public WsTxMessageMediator(ClientWebSocket ws, Channel<WsMessage> channel, RecyclableMemoryStreamManager memoryManager) {
+    public WsTxClient(ClientWebSocket ws, Channel<WsMessage> channel, RecyclableMemoryStreamManager memoryManager, int maxHeaderBytes) {
         _in = channel.Reader;
         _tx = new(ws, channel.Writer, memoryManager);
+        MaxHeaderBytes = maxHeaderBytes;
     }
+
+    public int MaxHeaderBytes { get; }
 
     [MemberNotNullWhen(true, nameof(_cts)), MemberNotNullWhen(true, nameof(_execute))]
     public bool Connected => _cts is not null & _execute is not null;
@@ -34,14 +35,15 @@ internal sealed class WsTxMessageMediator {
         Debug.Assert(ct.CanBeCanceled);
 
         while (!ct.IsCancellationRequested) {
+            ThrowIfDisconnected();
             var message = await _in.ReadAsync(ct).Inv();
 
             // receive the first part of the message
             var result = await message.ReceiveAsync(ct).Inv();
             WsHeader header;
-            using (var h = await message.LockStreamAsync(ct).Inv()) {
+            lock (message.Stream) {
                 // parse the header from the message
-                header = PeekHeader(h.Stream, result.Count);
+                header = PeekHeader(message.Stream, result.Count);
             }
 
             // find the handler
@@ -68,7 +70,7 @@ internal sealed class WsTxMessageMediator {
         }
     }
 
-    private static WsHeader PeekHeader(MemoryStream stream, int seekLength) {
+    private WsHeader PeekHeader(MemoryStream stream, int seekLength) {
         Span<byte> bytes = stackalloc byte[MaxHeaderBytes].ClipLength(seekLength);
         int read = stream.Read(bytes);
         // peek instead of reading
@@ -87,7 +89,6 @@ internal sealed class WsTxMessageMediator {
     public bool TryRegister(IHandler handler) {
         return _handlers.TryAdd(handler.Id, handler);
     }
-
 
     public void Open() {
         lock (_lock) {
@@ -125,4 +126,10 @@ internal sealed class WsTxMessageMediator {
         }
     }
 
+    public void Dispose() {
+        _tx.Dispose();
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _execute?.Dispose();
+    }
 }

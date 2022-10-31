@@ -1,43 +1,38 @@
-using System.Collections.ObjectModel;
 using System.Net.WebSockets;
 using System.Threading.Channels;
+
+using SurrealDB.Common;
 
 namespace SurrealDB.Ws;
 
 public sealed class WsMessage : IDisposable, IAsyncDisposable {
     private readonly Channel<WebSocketReceiveResult> _channel = Channel.CreateUnbounded<WebSocketReceiveResult>();
-    private readonly MemoryStream _buffer;
+    private readonly MemoryStream _stream;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly TaskCompletionSource<object?> _endOfMessageEvent = new();
     private int _endOfMessage;
 
-    internal WsMessage(MemoryStream buffer) {
-        _buffer = buffer;
+    internal WsMessage(MemoryStream stream) {
+        _stream = stream;
         _endOfMessage = 0;
     }
 
     public bool IsEndOfMessage => Interlocked.Add(ref _endOfMessage, 0) == 1;
 
-    public async Task<Handle> LockStreamAsync(CancellationToken ct) {
-        await _lock.WaitAsync(ct).ConfigureAwait(false);
-        return new(this);
-    }
-
-    public Handle LockStream(CancellationToken ct) {
-        _lock.Wait(ct);
-        return new(this);
-    }
+    /// <summary>The underlying stream.</summary>
+    /// <remarks>Use a <c>lock</c> (as in <see cref="Monitor.Enter(object?)"/>) before accessing!</remarks>
+    public MemoryStream Stream => _stream;
 
     public void Dispose() {
         _endOfMessageEvent.TrySetCanceled();
         _lock.Dispose();
-        _buffer.Dispose();
+        _stream.Dispose();
     }
 
     public ValueTask DisposeAsync() {
         _endOfMessageEvent.TrySetCanceled();
         _lock.Dispose();
-        return _buffer.DisposeAsync();
+        return _stream.DisposeAsync();
     }
 
     internal void SetEndOfMessage() {
@@ -58,21 +53,5 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
 
     public ValueTask<WebSocketReceiveResult> ReceiveAsync(CancellationToken ct) {
         return _channel.Reader.ReadAsync(ct);
-    }
-
-    public readonly struct Handle : IDisposable {
-        private readonly WsMessage _msg;
-
-        internal Handle(WsMessage msg) {
-            _msg = msg;
-        }
-
-        public MemoryStream Stream => _msg._buffer;
-
-        public bool EndOfMessage => _msg._endOfMessage == 0;
-
-        public void Dispose() {
-            _msg._lock.Release();
-        }
     }
 }

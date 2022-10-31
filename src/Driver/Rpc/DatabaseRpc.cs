@@ -8,7 +8,7 @@ using DriverResponse = SurrealDB.Models.Result.DriverResponse;
 namespace SurrealDB.Driver.Rpc;
 
 public sealed class DatabaseRpc : IDatabase {
-    private readonly WsClientSync _client = new();
+    private readonly WsClient _client = new();
     private Config _config;
     private bool _configured;
 
@@ -55,7 +55,7 @@ public sealed class DatabaseRpc : IDatabase {
 
         // Open connection
         InvalidConfigException.ThrowIfNull(_config.RpcEndpoint);
-        await _client.Open(_config.RpcEndpoint!, ct);
+        await _client.OpenAsync(_config.RpcEndpoint!, ct);
 
         // Authenticate
         if (_config.Username != null && _config.Password != null) {
@@ -70,7 +70,7 @@ public sealed class DatabaseRpc : IDatabase {
 
     public async Task Close(CancellationToken ct = default) {
         _configured = false;
-        await _client.Close(ct);
+        await _client.CloseAsync(ct);
     }
 
     /// <param name="ct"> </param>
@@ -86,7 +86,7 @@ public sealed class DatabaseRpc : IDatabase {
         string? ns,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClientSync.Response rsp = await _client.Send(new() { method = "use", parameters = new(){ db, ns } }, ct);
+        WsClient.Response rsp = await _client.Send(new() { method = "use", parameters = new(){ db, ns } }, ct);
 
         if (rsp.error == default) {
             _config.Database = db;
@@ -109,7 +109,7 @@ public sealed class DatabaseRpc : IDatabase {
         TRequest auth,
         CancellationToken ct = default) where TRequest : IAuth {
         ThrowIfInvalidConnection();
-        WsClientSync.Response rsp = await _client.Send(new() { method = "signin", parameters = new() { auth } }, ct);
+        WsClient.Response rsp = await _client.Send(new() { method = "signin", parameters = new() { auth } }, ct);
 
         return rsp.ToSurreal();
     }
@@ -155,8 +155,8 @@ public sealed class DatabaseRpc : IDatabase {
         IReadOnlyDictionary<string, object?>? vars,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClientSync.Request req = new() { method = "query", parameters = new() { sql, vars, }, };
-        WsClientSync.Response rsp = await _client.Send(req, ct);
+        WsClient.Request req = new() { method = "query", parameters = new() { sql, vars, }, };
+        WsClient.Response rsp = await _client.Send(req, ct);
         return rsp.ToSurreal();
     }
 
@@ -165,8 +165,8 @@ public sealed class DatabaseRpc : IDatabase {
         Thing thing,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClientSync.Request req = new() { method = "select", parameters = new() { thing, }, };
-        WsClientSync.Response rsp = await _client.Send(req, ct);
+        WsClient.Request req = new() { method = "select", parameters = new() { thing, }, };
+        WsClient.Response rsp = await _client.Send(req, ct);
         return rsp.ToSurreal();
     }
 
@@ -176,8 +176,8 @@ public sealed class DatabaseRpc : IDatabase {
         object data,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClientSync.Request req = new() { method = "create", async = true, parameters = new() { thing, data, }, };
-        WsClientSync.Response rsp = await _client.Send(req, ct);
+        WsClient.Request req = new() { method = "create", async = true, parameters = new() { thing, data, }, };
+        WsClient.Response rsp = await _client.Send(req, ct);
         return rsp.ToSurreal();
     }
 

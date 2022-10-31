@@ -8,13 +8,13 @@ using Microsoft.IO;
 namespace SurrealDB.Common;
 
 /// <summary>Allows reading a stream efficiently</summary>
-public struct BufferedStreamReader : IDisposable, IAsyncDisposable {
+public struct BufferStreamReader : IDisposable, IAsyncDisposable {
     public const int BUFFER_SIZE = 16 * 1024;
     private Stream? _arbitraryStream;
     private MemoryStream? _memoryStream;
     private byte[]? _poolArray;
 
-    private BufferedStreamReader(Stream? arbitraryStream, MemoryStream? memoryStream) {
+    private BufferStreamReader(Stream? arbitraryStream, MemoryStream? memoryStream) {
         _arbitraryStream = arbitraryStream;
         _memoryStream = memoryStream;
         _poolArray = null;
@@ -22,7 +22,7 @@ public struct BufferedStreamReader : IDisposable, IAsyncDisposable {
 
     public Stream Stream => _memoryStream ?? _arbitraryStream!;
 
-    public BufferedStreamReader(Stream stream) {
+    public BufferStreamReader(Stream stream) {
         ThrowArgIfStreamCantRead(stream);
         this = stream switch {
             RecyclableMemoryStream => new(stream, null), // TryGetBuffer is expensive!

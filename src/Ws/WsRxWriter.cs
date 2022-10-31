@@ -8,37 +8,37 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Sends messages from a channel to a websocket server.</summary>
-public sealed class WsChannelRx : IDisposable {
+public sealed class WsRxWriter : IDisposable {
     private readonly ClientWebSocket _ws;
-    private readonly ChannelReader<BufferedStreamReader> _in;
+    private readonly ChannelReader<BufferStreamReader> _in;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsChannelRx(ClientWebSocket ws, ChannelReader<BufferedStreamReader> @in) {
+    public WsRxWriter(ClientWebSocket ws, ChannelReader<BufferStreamReader> @in) {
         _ws = ws;
         _in = @in;
     }
 
-    private static async Task Execute(ClientWebSocket output, ChannelReader<BufferedStreamReader> input, CancellationToken ct) {
+    private static async Task Execute(ClientWebSocket output, ChannelReader<BufferStreamReader> input, CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
-            var reader = await input.ReadAsync(ct).ConfigureAwait(false);
+            var reader = await input.ReadAsync(ct).Inv();
 
             bool isFinalBlock = false;
             while (!isFinalBlock && !ct.IsCancellationRequested) {
-                var rom = await reader.ReadAsync(BufferedStreamReader.BUFFER_SIZE, ct).ConfigureAwait(false);
-                isFinalBlock = rom.Length != BufferedStreamReader.BUFFER_SIZE;
-                await output.SendAsync(rom, WebSocketMessageType.Text, isFinalBlock, ct).ConfigureAwait(false);
+                var rom = await reader.ReadAsync(BufferStreamReader.BUFFER_SIZE, ct).Inv();
+                isFinalBlock = rom.Length != BufferStreamReader.BUFFER_SIZE;
+                await output.SendAsync(rom, WebSocketMessageType.Text, isFinalBlock, ct).Inv();
             }
 
             if (!isFinalBlock) {
                 // ensure that the message is always terminated
                 // no not pass a CancellationToken
-                await output.SendAsync(default, WebSocketMessageType.Text, true, default).ConfigureAwait(false);
+                await output.SendAsync(default, WebSocketMessageType.Text, true, default).Inv();
             }
 
-            await reader.DisposeAsync().ConfigureAwait(false);
+            await reader.DisposeAsync().Inv();
             ct.ThrowIfCancellationRequested();
         }
     }
@@ -79,7 +79,6 @@ public sealed class WsChannelRx : IDisposable {
     }
 
     public void Dispose() {
-        _ws.Dispose();
         _cts?.Dispose();
         _execute?.Dispose();
     }

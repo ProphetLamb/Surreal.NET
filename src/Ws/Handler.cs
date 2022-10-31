@@ -37,10 +37,10 @@ internal sealed class ResponseHandler : IHandler {
 }
 
 internal class NotificationHandler : IHandler, IAsyncEnumerable<WsHeaderWithMessage> {
-    private readonly WsTxMessageMediator _mediator;
+    private readonly WsTxClient _mediator;
     private readonly CancellationToken _ct;
     private TaskCompletionSource<WsHeaderWithMessage> _tcs = new();
-    public NotificationHandler(WsTxMessageMediator mediator, string id, CancellationToken ct) {
+    public NotificationHandler(WsTxClient mediator, string id, CancellationToken ct) {
         _mediator = mediator;
         Id = id;
         _ct = ct;

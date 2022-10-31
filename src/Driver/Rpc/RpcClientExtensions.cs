@@ -12,8 +12,8 @@ using DriverResponse = SurrealDB.Models.Result.DriverResponse;
 namespace SurrealDB.Driver.Rpc;
 
 internal static class RpcClientExtensions {
-    internal static async Task<DriverResponse> ToSurreal(this Task<WsClientSync.Response> rsp) => ToSurreal(await rsp);
-    internal static DriverResponse ToSurreal(this WsClientSync.Response rsp){
+    internal static async Task<DriverResponse> ToSurreal(this Task<WsClient.Response> rsp) => ToSurreal(await rsp);
+    internal static DriverResponse ToSurreal(this WsClient.Response rsp){
         if (rsp.id is null) {
             ThrowIdMissing();
         }
@@ -25,7 +25,7 @@ internal static class RpcClientExtensions {
         return UnpackFromStatusDocument(in rsp);
     }
 
-    private static DriverResponse UnpackFromStatusDocument(in WsClientSync.Response rsp) {
+    private static DriverResponse UnpackFromStatusDocument(in WsClient.Response rsp) {
         // Some results come as a simple object or an array of objects or even and empty string
         // [ { }, { }, ... ]
         // Others come embedded into a 'status document' that can have multiple result sets
@@ -61,7 +61,7 @@ internal static class RpcClientExtensions {
         return new(RawResult.Ok(default, rsp.result));
     }
 
-    private static DriverResponse ToSingleAny(in WsClientSync.Response rsp) {
+    private static DriverResponse ToSingleAny(in WsClient.Response rsp) {
         JsonElement root = rsp.result;
         if (root.ValueKind == JsonValueKind.Object) {
             var okOrErr = root.Deserialize<OkOrErrorResult>(SerializerOptions.Shared);
@@ -79,7 +79,7 @@ internal static class RpcClientExtensions {
         return new(RawResult.Ok(default, root));
     }
 
-    private static DriverResponse FromNestedStatus(in WsClientSync.Response rsp) {
+    private static DriverResponse FromNestedStatus(in WsClient.Response rsp) {
         ArrayBuilder<RawResult> builder = new();
         foreach (JsonElement e in rsp.result.EnumerateArray()) {
             OkOrErrorResult res = e.Deserialize<OkOrErrorResult>(SerializerOptions.Shared);

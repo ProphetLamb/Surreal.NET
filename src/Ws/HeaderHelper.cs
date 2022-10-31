@@ -8,6 +8,13 @@ using SurrealDB.Json;
 namespace SurrealDB.Ws;
 
 public static class HeaderHelper {
+    /// <summary>Generates a random base64 string of the length specified.</summary>
+    public static string GetRandomId(int length) {
+        Span<byte> buf = stackalloc byte[length];
+        ThreadRng.Shared.NextBytes(buf);
+        return Convert.ToBase64String(buf);
+    }
+
     public static WsHeader Parse(ReadOnlySpan<byte> utf8) {
         var (rsp, rspOff, rspErr) = RspHeader.Parse(utf8);
         if (rspErr is null) {
@@ -22,7 +29,7 @@ public static class HeaderHelper {
     }
 }
 
-public readonly record struct WsHeader(RspHeader Response, NtyHeader Notify, int Offset) {
+public readonly record struct WsHeader(RspHeader Response, NtyHeader Notify, int BytesLength) {
    public string? Id => (Response.IsDefault, Notify.IsDefault) switch {
         (true, false) => Notify.id,
         (false, true) => Response.id,
@@ -40,7 +47,7 @@ public readonly record struct WsHeaderWithMessage(WsHeader Header, WsMessage Mes
     }
 }
 
-public readonly record struct NtyHeader(string? id, string? method, WsClientSync.Error err) {
+public readonly record struct NtyHeader(string? id, string? method, WsClient.Error err) {
     public bool IsDefault => default == this;
 
     /// <summary>
@@ -77,7 +84,7 @@ public readonly record struct NtyHeader(string? id, string? method, WsClientSync
 
         public string? Name;
         public string? Id;
-        public WsClientSync.Error Error;
+        public WsClient.Error Error;
         public string? Method;
 
         public bool MoveNext() {
@@ -149,7 +156,7 @@ public readonly record struct NtyHeader(string? id, string? method, WsClientSync
         }
 
         private bool PropError() {
-            Error = JsonSerializer.Deserialize<WsClientSync.Error>(ref Lexer, SerializerOptions.Shared);
+            Error = JsonSerializer.Deserialize<WsClient.Error>(ref Lexer, SerializerOptions.Shared);
             State = Fsms.End;
             return true;
         }
@@ -175,7 +182,7 @@ public readonly record struct NtyHeader(string? id, string? method, WsClientSync
     }
 }
 
-public readonly record struct RspHeader(string? id, WsClientSync.Error err) {
+public readonly record struct RspHeader(string? id, WsClient.Error err) {
     public bool IsDefault => default == this;
 
     /// <summary>
@@ -211,7 +218,7 @@ public readonly record struct RspHeader(string? id, WsClientSync.Error err) {
 
         public string? Name;
         public string? Id;
-        public WsClientSync.Error Error;
+        public WsClient.Error Error;
 
         public bool MoveNext() {
             return State switch {
@@ -277,7 +284,7 @@ public readonly record struct RspHeader(string? id, WsClientSync.Error err) {
         }
 
         private bool PropError() {
-            Error = JsonSerializer.Deserialize<WsClientSync.Error>(ref Lexer, SerializerOptions.Shared);
+            Error = JsonSerializer.Deserialize<WsClient.Error>(ref Lexer, SerializerOptions.Shared);
             State = Fsms.End;
             return true;
         }
