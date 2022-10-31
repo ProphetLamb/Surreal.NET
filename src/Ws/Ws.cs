@@ -79,7 +79,7 @@ public sealed class Ws : IDisposable, IAsyncDisposable {
                 continue;
             }
 
-            handler.Handle(response, notify, stream);
+            handler.Dispatch(response, notify, stream);
 
             if (!handler.Persistent) {
                 // persistent handlers are for notifications and are not removed automatically
