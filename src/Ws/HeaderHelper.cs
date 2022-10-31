@@ -37,13 +37,9 @@ public readonly record struct WsHeader(RspHeader Response, NtyHeader Notify, int
     };
 }
 
-public readonly record struct WsHeaderWithMessage(WsHeader Header, WsMessageReader Message) : IDisposable, IAsyncDisposable {
+public readonly record struct WsHeaderWithMessage(WsHeader Header, WsMessageReader Message) : IDisposable {
     public void Dispose() {
         Message.Dispose();
-    }
-
-    public ValueTask DisposeAsync() {
-        return Message.DisposeAsync();
     }
 }
 
