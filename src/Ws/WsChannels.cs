@@ -1,10 +1,13 @@
 using System.Buffers;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
 using System.Threading.Channels;
 
 using Microsoft.IO;
+
+using SurrealDB.Common;
 
 namespace SurrealDB.Ws;
 
@@ -116,19 +119,19 @@ public sealed class WsChannelTx : IDisposable {
             WsMessage msg = new(new RecyclableMemoryStream(memoryManager));
             // begin adding the message to the output
             var writeOutput = output.WriteAsync(msg, ct);
-            using (var h = await msg.LockAsync(ct).ConfigureAwait(false)) {
-                // write the first part to the message
+            using (var h = await msg.LockStreamAsync(ct).ConfigureAwait(false)) {
+                // write the first part to the message and notify listeners
                 await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).ConfigureAwait(false);
-                // indicate, that a message has been received
-                msg.SetReceived(result);
+                await msg.SetReceivedAsync(result, ct).Inv();
             }
 
             while (!result.EndOfMessage && !ct.IsCancellationRequested) {
                 // receive more parts
                 result = await input.ReceiveAsync(buffer, ct).ConfigureAwait(false);
-                using var h = await msg.LockAsync(ct).ConfigureAwait(false);
+                using var h = await msg.LockStreamAsync(ct).ConfigureAwait(false);
                 await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).ConfigureAwait(false);
-                msg.SetReceived(result);
+                await msg.SetReceivedAsync(result, ct).Inv();
+
                 if (result.EndOfMessage) {
                     msg.SetEndOfMessage();
                 }
@@ -187,10 +190,10 @@ public sealed class WsChannelTx : IDisposable {
 }
 
 public sealed class WsMessage : IDisposable, IAsyncDisposable {
+    private readonly Channel<WebSocketReceiveResult> _channel = Channel.CreateUnbounded<WebSocketReceiveResult>();
     private readonly MemoryStream _buffer;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly TaskCompletionSource<object?> _endOfMessageEvent = new();
-    private TaskCompletionSource<WebSocketReceiveResult> _receivedEvent = new();
     private int _endOfMessage;
 
     internal WsMessage(MemoryStream buffer) {
@@ -198,12 +201,14 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
         _endOfMessage = 0;
     }
 
-    public async Task<Handle> LockAsync(CancellationToken ct) {
+    public bool IsEndOfMessage => Interlocked.Add(ref _endOfMessage, 0) == 1;
+
+    public async Task<Handle> LockStreamAsync(CancellationToken ct) {
         await _lock.WaitAsync(ct).ConfigureAwait(false);
         return new(this);
     }
 
-    public Handle Lock(CancellationToken ct) {
+    public Handle LockStream(CancellationToken ct) {
         _lock.Wait(ct);
         return new(this);
     }
@@ -228,17 +233,16 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
         }
     }
 
-    internal void SetReceived(WebSocketReceiveResult count) {
-        var receivedEvent = Interlocked.Exchange(ref _receivedEvent, new());
-        receivedEvent.SetResult(count);
-    }
-
     public Task EndOfMessageAsync() {
         return _endOfMessageEvent.Task;
     }
 
-    public Task<WebSocketReceiveResult> ReceivedAsync() {
-        return _receivedEvent.Task;
+    internal ValueTask SetReceivedAsync(WebSocketReceiveResult result, CancellationToken ct) {
+        return _channel.Writer.WriteAsync(result, ct);
+    }
+
+    public ValueTask<WebSocketReceiveResult> ReceiveAsync(CancellationToken ct) {
+        return _channel.Reader.ReadAsync(ct);
     }
 
     public readonly struct Handle : IDisposable {
