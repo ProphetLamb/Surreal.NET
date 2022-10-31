@@ -5,9 +5,7 @@ using System.Runtime.CompilerServices;
 
 using Microsoft.IO;
 
-using SurrealDB.Common;
-
-namespace SurrealDB.Ws;
+namespace SurrealDB.Common;
 
 /// <summary>Allows reading a stream efficiently</summary>
 public struct BufferedStreamReader : IDisposable, IAsyncDisposable {

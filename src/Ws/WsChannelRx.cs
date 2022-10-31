@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
 using System.Threading.Channels;
 
+using SurrealDB.Common;
+
 namespace SurrealDB.Ws;
 
 /// <summary>Sends messages from a channel to a websocket server.</summary>
