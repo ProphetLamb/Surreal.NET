@@ -20,6 +20,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.1" />
+		<PackageReference Include="System.Threading.Channels" Version="6.0.0" />
 	</ItemGroup>
 
 </Project>
