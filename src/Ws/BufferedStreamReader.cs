@@ -110,13 +110,13 @@ public struct BufferedStreamReader : IDisposable, IAsyncDisposable {
         var arbitraryStream = _arbitraryStream;
         _arbitraryStream = null;
         if (arbitraryStream is not null) {
-            await arbitraryStream.DisposeAsync().ConfigureAwait(false);
+            await arbitraryStream.DisposeAsync().Inv();
         }
 
         var memoryStream = _memoryStream;
         _memoryStream = null;
         if (memoryStream is not null) {
-            await memoryStream.DisposeAsync().ConfigureAwait(false);
+            await memoryStream.DisposeAsync().Inv();
         }
 
         var poolArray = _poolArray;

@@ -6,6 +6,8 @@ using System.Threading.Channels;
 
 using Microsoft.IO;
 
+using SurrealDB.Common;
+
 namespace SurrealDB.Ws;
 
 /// <summary>Sends messages from a channel to a websocket server.</summary>
@@ -24,22 +26,22 @@ public sealed class WsChannelRx {
     private static async Task Execute(ClientWebSocket output, ChannelReader<BufferedStreamReader> input, CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
-            var reader = await input.ReadAsync(ct).ConfigureAwait(false);
+            var reader = await input.ReadAsync(ct).Inv();
 
             bool isFinalBlock = false;
             while (!isFinalBlock && !ct.IsCancellationRequested) {
-                var rom = await reader.ReadAsync(BufferedStreamReader.BUFFER_SIZE, ct).ConfigureAwait(false);
+                var rom = await reader.ReadAsync(BufferedStreamReader.BUFFER_SIZE, ct).Inv();
                 isFinalBlock = rom.Length != BufferedStreamReader.BUFFER_SIZE;
-                await output.SendAsync(rom, WebSocketMessageType.Text, isFinalBlock, ct).ConfigureAwait(false);
+                await output.SendAsync(rom, WebSocketMessageType.Text, isFinalBlock, ct).Inv();
             }
 
             if (!isFinalBlock) {
                 // ensure that the message is always terminated
                 // no not pass a CancellationToken
-                await output.SendAsync(default, WebSocketMessageType.Text, true, default).ConfigureAwait(false);
+                await output.SendAsync(default, WebSocketMessageType.Text, true, default).Inv();
             }
 
-            await reader.DisposeAsync().ConfigureAwait(false);
+            await reader.DisposeAsync().Inv();
             ct.ThrowIfCancellationRequested();
         }
     }
@@ -104,24 +106,24 @@ public sealed class WsChannelTx {
         while (!ct.IsCancellationRequested) {
             var buffer = ArrayPool<byte>.Shared.Rent(BufferedStreamReader.BUFFER_SIZE);
             // receive the first part
-            var result = await input.ReceiveAsync(buffer, ct).ConfigureAwait(false);
+            var result = await input.ReceiveAsync(buffer, ct).Inv();
             // create a new message with a RecyclableMemoryStream
             // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
             WsMessage msg = new(new RecyclableMemoryStream(memoryManager));
             // begin adding the message to the output
             var writeOutput = output.WriteAsync(msg, ct);
-            using (var h = await msg.LockAsync(ct).ConfigureAwait(false)) {
+            using (var h = await msg.LockAsync(ct).Inv()) {
                 // write the first part to the message
-                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).ConfigureAwait(false);
+                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).Inv();
                 // indicate, that a message has been received
                 msg.SetReceived(result);
             }
 
             while (!result.EndOfMessage && !ct.IsCancellationRequested) {
                 // receive more parts
-                result = await input.ReceiveAsync(buffer, ct).ConfigureAwait(false);
-                using var h = await msg.LockAsync(ct).ConfigureAwait(false);
-                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).ConfigureAwait(false);
+                result = await input.ReceiveAsync(buffer, ct).Inv();
+                using var h = await msg.LockAsync(ct).Inv();
+                await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct).Inv();
                 msg.SetReceived(result);
                 if (result.EndOfMessage) {
                     msg.SetEndOfMessage();
@@ -130,7 +132,7 @@ public sealed class WsChannelTx {
             }
 
             // finish adding the message to the output
-            await writeOutput.ConfigureAwait(false);
+            await writeOutput.Inv();
 
             ArrayPool<byte>.Shared.Return(buffer);
             ct.ThrowIfCancellationRequested();
@@ -186,7 +188,7 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
     }
 
     public async Task<Handle> LockAsync(CancellationToken ct) {
-        await _lock.WaitAsync(ct).ConfigureAwait(false);
+        await _lock.WaitAsync(ct).Inv();
         return new(this);
     }
 
