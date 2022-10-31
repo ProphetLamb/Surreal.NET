@@ -77,25 +77,26 @@ public sealed class WsClient : IDisposable {
         await using (var stream = await SerializeAsync(req, ct).Inv()) {
             await _rx.SendAsync(stream);
         }
-        // await response
-        var response = await handler.Task.Inv();
+        // await response, dispose message when done
+        using var response = await handler.Task.Inv();
         // validate header
-        var header = response.Header.Response;
+        var responseHeader = response.Header.Response;
         if (!response.Header.Notify.IsDefault) {
             ThrowExpectResponseGotNotify();
         }
-        if (header.IsDefault) {
+        if (responseHeader.IsDefault) {
             ThrowInvalidResponse();
         }
 
-        // move position stream beyond header and deserialize message body
+        // position stream beyond header and deserialize message body
         response.Message.Position = response.Header.BytesLength;
         // deserialize body
         var body = await JsonSerializer.DeserializeAsync<JsonDocument>(response.Message, SerializerOptions.Shared, ct).Inv();
         if (body is null) {
             ThrowInvalidResponse();
         }
-        return new(header.id, header.err, ExtractResult(body));
+
+        return new(responseHeader.id, responseHeader.err, ExtractResult(body));
     }
 
     private static async Task<RecyclableMemoryStream> SerializeAsync(Request req, CancellationToken ct) {
