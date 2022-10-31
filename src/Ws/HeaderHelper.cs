@@ -1,8 +1,44 @@
+using System.Diagnostics;
+using System.Net.WebSockets;
 using System.Text.Json;
 
+using SurrealDB.Common;
 using SurrealDB.Json;
 
 namespace SurrealDB.Ws;
+
+public static class HeaderHelper {
+    public static WsHeader Parse(ReadOnlySpan<byte> utf8) {
+        var (rsp, rspOff, rspErr) = RspHeader.Parse(utf8);
+        if (rspErr is null) {
+            return new(rsp, default, (int)rspOff);
+        }
+        var (nty, ntyOff, ntyErr) = NtyHeader.Parse(utf8);
+        if (ntyErr is null) {
+            return new(default, nty, (int)ntyOff);
+        }
+
+        throw new JsonException($"Failed to parse RspHeader or NotifyHeader: {rspErr} \n--AND--\n {ntyErr}", null, 0, Math.Max(rspOff, ntyOff));
+    }
+}
+
+public readonly record struct WsHeader(RspHeader Response, NtyHeader Notify, int Offset) {
+   public string? Id => (Response.IsDefault, Notify.IsDefault) switch {
+        (true, false) => Notify.id,
+        (false, true) => Response.id,
+        _ => null
+    };
+}
+
+public readonly record struct WsHeaderWithMessage(WsHeader Header, WsMessage Message) : IDisposable, IAsyncDisposable {
+    public void Dispose() {
+        Message.Dispose();
+    }
+
+    public ValueTask DisposeAsync() {
+        return Message.DisposeAsync();
+    }
+}
 
 public readonly record struct NtyHeader(string? id, string? method, WsClient.Error err) {
     public bool IsDefault => default == this;
