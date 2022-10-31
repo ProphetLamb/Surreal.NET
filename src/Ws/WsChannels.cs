@@ -94,8 +94,10 @@ internal sealed class WsChannelTx {
     }
 
     private static async Task Execute(ClientWebSocket input, ChannelWriter<WsMessage> output, CancellationToken ct) {
-        RecyclableMemoryStreamManager memoryManager = new();
         Debug.Assert(ct.CanBeCanceled);
+        // the MemoryManager associated with the streams
+        RecyclableMemoryStreamManager memoryManager = new();
+
         while (!ct.IsCancellationRequested) {
             var buffer = ArrayPool<byte>.Shared.Rent(BufferedStreamReader.BUFFER_SIZE);
             // receive the first part
@@ -115,8 +117,10 @@ internal sealed class WsChannelTx {
                 result = await input.ReceiveAsync(buffer, ct).ConfigureAwait(false);
                 using var h = await msg.LockAsync(ct);
                 await h.Stream.WriteAsync(buffer.AsMemory(0, result.Count), ct);
+                h.EndOfMessage = result.EndOfMessage;
             }
 
+            // finish adding the message to the output
             await writeOutput.ConfigureAwait(false);
 
             ArrayPool<byte>.Shared.Return(buffer);
@@ -163,6 +167,7 @@ internal sealed class WsChannelTx {
 public sealed class WsMessage : IDisposable, IAsyncDisposable {
     private readonly MemoryStream _buffer;
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly TaskCompletionSource _endOfMessageEvent = new();
     private bool _endOfMessage;
 
     internal WsMessage(MemoryStream buffer) {
@@ -181,13 +186,19 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
     }
 
     public void Dispose() {
+        _endOfMessageEvent.TrySetCanceled();
         _lock.Dispose();
         _buffer.Dispose();
     }
 
     public ValueTask DisposeAsync() {
+        _endOfMessageEvent.TrySetCanceled();
         _lock.Dispose();
         return _buffer.DisposeAsync();
+    }
+
+    public Task EndOfMessageAsync(CancellationToken ct = default) {
+        return ct.CanBeCanceled ? _endOfMessageEvent.Task.WaitAsync(ct) : _endOfMessageEvent.Task;
     }
 
     public readonly struct Handle : IDisposable {
@@ -198,7 +209,17 @@ public sealed class WsMessage : IDisposable, IAsyncDisposable {
         }
 
         public MemoryStream Stream => _msg._buffer;
-        public bool EndOfMessage { get => _msg._endOfMessage; set => _msg._endOfMessage = value; }
+
+        public bool EndOfMessage {
+            get => _msg._endOfMessage;
+            set {
+                if (!_msg._endOfMessage && value) {
+                    // finish the AwaitEndOfMessage task
+                    _msg._endOfMessageEvent.SetResult();
+                }
+                _msg._endOfMessage = value;
+            }
+        }
 
         public void Dispose() {
             _msg._lock.Release();
