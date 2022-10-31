@@ -8,7 +8,7 @@ using DriverResponse = SurrealDB.Models.Result.DriverResponse;
 namespace SurrealDB.Driver.Rpc;
 
 public sealed class DatabaseRpc : IDatabase {
-    private readonly WsClient _client = new();
+    private readonly WsClientSync _client = new();
     private Config _config;
     private bool _configured;
 
@@ -86,7 +86,7 @@ public sealed class DatabaseRpc : IDatabase {
         string? ns,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClient.Response rsp = await _client.Send(new() { method = "use", parameters = new(){ db, ns } }, ct);
+        WsClientSync.Response rsp = await _client.Send(new() { method = "use", parameters = new(){ db, ns } }, ct);
 
         if (rsp.error == default) {
             _config.Database = db;
@@ -109,7 +109,7 @@ public sealed class DatabaseRpc : IDatabase {
         TRequest auth,
         CancellationToken ct = default) where TRequest : IAuth {
         ThrowIfInvalidConnection();
-        WsClient.Response rsp = await _client.Send(new() { method = "signin", parameters = new() { auth } }, ct);
+        WsClientSync.Response rsp = await _client.Send(new() { method = "signin", parameters = new() { auth } }, ct);
 
         return rsp.ToSurreal();
     }
@@ -155,8 +155,8 @@ public sealed class DatabaseRpc : IDatabase {
         IReadOnlyDictionary<string, object?>? vars,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClient.Request req = new() { method = "query", parameters = new() { sql, vars, }, };
-        WsClient.Response rsp = await _client.Send(req, ct);
+        WsClientSync.Request req = new() { method = "query", parameters = new() { sql, vars, }, };
+        WsClientSync.Response rsp = await _client.Send(req, ct);
         return rsp.ToSurreal();
     }
 
@@ -165,8 +165,8 @@ public sealed class DatabaseRpc : IDatabase {
         Thing thing,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClient.Request req = new() { method = "select", parameters = new() { thing, }, };
-        WsClient.Response rsp = await _client.Send(req, ct);
+        WsClientSync.Request req = new() { method = "select", parameters = new() { thing, }, };
+        WsClientSync.Response rsp = await _client.Send(req, ct);
         return rsp.ToSurreal();
     }
 
@@ -176,8 +176,8 @@ public sealed class DatabaseRpc : IDatabase {
         object data,
         CancellationToken ct = default) {
         ThrowIfInvalidConnection();
-        WsClient.Request req = new() { method = "create", async = true, parameters = new() { thing, data, }, };
-        WsClient.Response rsp = await _client.Send(req, ct);
+        WsClientSync.Request req = new() { method = "create", async = true, parameters = new() { thing, data, }, };
+        WsClientSync.Response rsp = await _client.Send(req, ct);
         return rsp.ToSurreal();
     }
 

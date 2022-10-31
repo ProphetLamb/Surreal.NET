@@ -12,10 +12,10 @@ namespace SurrealDB.Ws;
 /// <summary>
 ///     The client used to connect to the Surreal server via JSON RPC.
 /// </summary>
-public sealed class WsClient : IDisposable, IAsyncDisposable {
+public sealed class WsClientSync : IDisposable, IAsyncDisposable {
     private static readonly Lazy<RecyclableMemoryStreamManager> s_manager = new(static () => new());
     // Do not get any funny ideas and fill this fucker up.
-    public static readonly List<object?> EmptyList = new();
+    private static readonly List<object?> EmptyList = new();
 
     private readonly Ws _ws = new();
 

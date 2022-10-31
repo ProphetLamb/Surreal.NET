@@ -73,7 +73,7 @@ internal class NotificationHandler : IHandler, IAsyncEnumerable<WsHeaderWithMess
 
         // unregister before throwing
         if (_ct.IsCancellationRequested) {
-            _mediator.Unregister(this);
+            _mediator.Unregister(Id);
         }
     }
 }

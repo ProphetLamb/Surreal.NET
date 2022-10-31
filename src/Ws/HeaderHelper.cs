@@ -40,7 +40,7 @@ public readonly record struct WsHeaderWithMessage(WsHeader Header, WsMessage Mes
     }
 }
 
-public readonly record struct NtyHeader(string? id, string? method, WsClient.Error err) {
+public readonly record struct NtyHeader(string? id, string? method, WsClientSync.Error err) {
     public bool IsDefault => default == this;
 
     /// <summary>
@@ -77,7 +77,7 @@ public readonly record struct NtyHeader(string? id, string? method, WsClient.Err
 
         public string? Name;
         public string? Id;
-        public WsClient.Error Error;
+        public WsClientSync.Error Error;
         public string? Method;
 
         public bool MoveNext() {
@@ -149,7 +149,7 @@ public readonly record struct NtyHeader(string? id, string? method, WsClient.Err
         }
 
         private bool PropError() {
-            Error = JsonSerializer.Deserialize<WsClient.Error>(ref Lexer, SerializerOptions.Shared);
+            Error = JsonSerializer.Deserialize<WsClientSync.Error>(ref Lexer, SerializerOptions.Shared);
             State = Fsms.End;
             return true;
         }
@@ -175,7 +175,7 @@ public readonly record struct NtyHeader(string? id, string? method, WsClient.Err
     }
 }
 
-public readonly record struct RspHeader(string? id, WsClient.Error err) {
+public readonly record struct RspHeader(string? id, WsClientSync.Error err) {
     public bool IsDefault => default == this;
 
     /// <summary>
@@ -211,7 +211,7 @@ public readonly record struct RspHeader(string? id, WsClient.Error err) {
 
         public string? Name;
         public string? Id;
-        public WsClient.Error Error;
+        public WsClientSync.Error Error;
 
         public bool MoveNext() {
             return State switch {
@@ -277,7 +277,7 @@ public readonly record struct RspHeader(string? id, WsClient.Error err) {
         }
 
         private bool PropError() {
-            Error = JsonSerializer.Deserialize<WsClient.Error>(ref Lexer, SerializerOptions.Shared);
+            Error = JsonSerializer.Deserialize<WsClientSync.Error>(ref Lexer, SerializerOptions.Shared);
             State = Fsms.End;
             return true;
         }
