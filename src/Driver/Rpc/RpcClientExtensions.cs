@@ -12,7 +12,6 @@ using DriverResponse = SurrealDB.Models.Result.DriverResponse;
 namespace SurrealDB.Driver.Rpc;
 
 internal static class RpcClientExtensions {
-
     internal static async Task<DriverResponse> ToSurreal(this Task<WsClientSync.Response> rsp) => ToSurreal(await rsp);
     internal static DriverResponse ToSurreal(this WsClientSync.Response rsp){
         if (rsp.id is null) {

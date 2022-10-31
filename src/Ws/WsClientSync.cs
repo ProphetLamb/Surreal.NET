@@ -15,7 +15,7 @@ namespace SurrealDB.Ws;
 public sealed class WsClientSync : IDisposable, IAsyncDisposable {
     private static readonly Lazy<RecyclableMemoryStreamManager> s_manager = new(static () => new());
     // Do not get any funny ideas and fill this fucker up.
-    private static readonly List<object?> EmptyList = new();
+    private static readonly List<object?> s_emptyList = new();
 
     private readonly Ws _ws = new();
 
@@ -64,7 +64,7 @@ public sealed class WsClientSync : IDisposable, IAsyncDisposable {
     public async Task<Response> Send(Request req, CancellationToken ct = default) {
         ThrowIfDisconnected();
         req.id ??= GetRandomId(6);
-        req.parameters ??= EmptyList;
+        req.parameters ??= s_emptyList;
 
         await using RecyclableMemoryStream stream = new(s_manager.Value);
 
