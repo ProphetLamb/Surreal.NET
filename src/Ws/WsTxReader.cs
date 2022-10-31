@@ -13,13 +13,13 @@ namespace SurrealDB.Ws;
 /// <summary>Receives messages from a websocket server and passes them to a channel</summary>
 public sealed class WsTxReader : IDisposable {
     private readonly ClientWebSocket _ws;
-    private readonly ChannelWriter<WsMessage> _out;
+    private readonly ChannelWriter<WsMessageReader> _out;
     private readonly RecyclableMemoryStreamManager _memoryManager;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsTxReader(ClientWebSocket ws, ChannelWriter<WsMessage> @out, RecyclableMemoryStreamManager memoryManager) {
+    public WsTxReader(ClientWebSocket ws, ChannelWriter<WsMessageReader> @out, RecyclableMemoryStreamManager memoryManager) {
         _ws = ws;
         _out = @out;
         _memoryManager = memoryManager;
@@ -43,20 +43,16 @@ public sealed class WsTxReader : IDisposable {
         var result = await _ws.ReceiveAsync(buffer, ct).Inv();
         // create a new message with a RecyclableMemoryStream
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
-        WsMessage msg = new(new RecyclableMemoryStream(_memoryManager));
+        WsMessageReader msg = new(new RecyclableMemoryStream(_memoryManager));
         // begin adding the message to the output
         var writeOutput = _out.WriteAsync(msg, ct);
 
-        await WriteToStream(msg, buffer, result, ct).Inv();
+        await msg.WriteResultAsync(buffer, result, ct).Inv();
 
         while (!result.EndOfMessage && !ct.IsCancellationRequested) {
             // receive more parts
             result = await _ws.ReceiveAsync(buffer, ct).Inv();
-            await WriteToStream(msg, buffer, result, ct).Inv();
-
-            if (result.EndOfMessage) {
-                msg.SetEndOfMessage();
-            }
+            msg.WriteResultAsync(buffer, result, ct).Inv();
 
             ct.ThrowIfCancellationRequested();
         }
@@ -65,13 +61,6 @@ public sealed class WsTxReader : IDisposable {
         await writeOutput.Inv();
     }
 
-    private static async Task WriteToStream(WsMessage msg, byte[] buffer, WebSocketReceiveResult result, CancellationToken ct) {
-        lock (msg.Stream) {
-            msg.Stream.Write(buffer.AsSpan(0, result.Count));
-        }
-
-        await msg.SetReceivedAsync(result, ct).Inv();
-    }
 
     [MemberNotNullWhen(true, nameof(_cts)), MemberNotNullWhen(true, nameof(_execute))]
     public bool Connected => _cts is not null & _execute is not null;

@@ -31,7 +31,7 @@ public sealed class WsClient : IDisposable {
     public WsClient(WsClientOptions options) {
         _memoryManager = options.MemoryManager ?? new();
         _rx = new(_ws, Channel.CreateBounded<BufferStreamReader>(options.ChannelRxMessagesMax));
-        _tx = new(_ws, Channel.CreateBounded<WsMessage>(options.ChannelTxMessagesMax), _memoryManager, options.HeaderBytesMax);
+        _tx = new(_ws, Channel.CreateBounded<WsMessageReader>(options.ChannelTxMessagesMax), _memoryManager, options.HeaderBytesMax);
         _idBytes = options.IdBytes;
     }
 
@@ -78,25 +78,20 @@ public sealed class WsClient : IDisposable {
             await _rx.SendAsync(stream);
         }
         // await response
-        var message = await handler.Task.Inv();
+        var response = await handler.Task.Inv();
         // validate header
-        var header = message.Header.Response;
-        if (!message.Header.Notify.IsDefault) {
+        var header = response.Header.Response;
+        if (!response.Header.Notify.IsDefault) {
             ThrowExpectResponseGotNotify();
         }
         if (header.IsDefault) {
             ThrowInvalidResponse();
         }
 
+        // move position stream beyond header and deserialize message body
+        response.Message.Position = response.Header.BytesLength;
         // deserialize body
-        await message.Message.EndOfMessageAsync().Inv();
-        JsonDocument? body;
-        lock (message.Message.Stream) {
-            var stream = message.Message.Stream;
-            // move position stream beyond header and deserialize message body
-            stream.Position += message.Header.BytesLength;
-            body = JsonSerializer.Deserialize<JsonDocument>(stream, SerializerOptions.Shared);
-        }
+        var body = await JsonSerializer.DeserializeAsync<JsonDocument>(response.Message, SerializerOptions.Shared, ct).Inv();
         if (body is null) {
             ThrowInvalidResponse();
         }

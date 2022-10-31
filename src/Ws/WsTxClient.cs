@@ -13,14 +13,14 @@ namespace SurrealDB.Ws;
 
 /// <summary>Listens for <see cref="WsMessage"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
 internal sealed class WsTxClient : IDisposable {
-    private readonly ChannelReader<WsMessage> _in;
+    private readonly ChannelReader<WsMessageReader> _in;
     private readonly WsTxReader _tx;
     private readonly ConcurrentDictionary<string, IHandler> _handlers = new();
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsTxClient(ClientWebSocket ws, Channel<WsMessage> channel, RecyclableMemoryStreamManager memoryManager, int maxHeaderBytes) {
+    public WsTxClient(ClientWebSocket ws, Channel<WsMessageReader> channel, RecyclableMemoryStreamManager memoryManager, int maxHeaderBytes) {
         _in = channel.Reader;
         _tx = new(ws, channel.Writer, memoryManager);
         MaxHeaderBytes = maxHeaderBytes;
@@ -40,14 +40,11 @@ internal sealed class WsTxClient : IDisposable {
 
             // receive the first part of the message
             var result = await message.ReceiveAsync(ct).Inv();
-            WsHeader header;
-            lock (message.Stream) {
-                // parse the header from the message
-                header = PeekHeader(message.Stream, result.Count);
-            }
+            // parse the header from the message
+            WsHeader header = PeekHeader(message, result.Count);
 
-            // find the handler
-            string? id = header.Id;
+                // find the handler
+                string? id = header.Id;
             if (id is null || !_handlers.TryGetValue(id, out var handler)) {
                 // invalid format, or no registered -> discard message
                 await message.DisposeAsync().Inv();
@@ -70,11 +67,11 @@ internal sealed class WsTxClient : IDisposable {
         }
     }
 
-    private WsHeader PeekHeader(MemoryStream stream, int seekLength) {
-        Span<byte> bytes = stackalloc byte[MaxHeaderBytes].ClipLength(seekLength);
+    private WsHeader PeekHeader(Stream stream, int seekLength) {
+        Span<byte> bytes = stackalloc byte[Math.Min(MaxHeaderBytes, seekLength)];
         int read = stream.Read(bytes);
         // peek instead of reading
-        stream.Position -= read;
+        stream.Position = 0;
         Debug.Assert(read == bytes.Length);
         return HeaderHelper.Parse(bytes);
     }
