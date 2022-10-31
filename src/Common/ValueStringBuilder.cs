@@ -99,6 +99,9 @@ internal ref struct ValueStringBuilder
     /// <summary>Returns the underlying storage of the builder.</summary>
     public Span<char> RawChars => _chars;
 
+    /// <summary>Indicates whether the represented string is empty.</summary>
+    public bool IsEmpty => 0 >= (uint)Length;
+
     /// <summary>
     /// Returns a span around the contents of the builder.
     /// </summary>

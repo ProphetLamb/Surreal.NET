@@ -28,7 +28,7 @@ public abstract class GeneralQueryTests<T>
     public GeneralQueryTests(ITestOutputHelper logger) {
         Logger = logger;
     }
-    
+
     private static readonly List<Car> CarRecords = new List<Car> {
         new Car(
             Brand: "Car 1",
@@ -134,7 +134,7 @@ public abstract class GeneralQueryTests<T>
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
-    
+
     [Fact]
     public async Task ManuallyGeneratedObjectStructureQueryTest() => await DbHandle<T>.WithDatabase(
         async db => {
@@ -204,7 +204,7 @@ GROUP BY RegisteredCountry;";
         async db => {
             MathRequestDocument expectedObject = new() { f1 = 1, f2 = 1, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
-        Thing thing = new("object", ThreadRng.Shared.Next());
+        Thing thing = Thing.From("object", ThreadRng.Shared.Next());
         await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -224,7 +224,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.Epsilon, f2 = float.Epsilon, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = Thing.From("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -245,7 +245,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.MinValue, f2 = float.MaxValue, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = Thing.From("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -266,7 +266,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.MaxValue, f2 = float.MinValue, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 - expectedObject.f2 };
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = Thing.From("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 - f2) as result FROM $record";
@@ -309,7 +309,7 @@ GROUP BY RegisteredCountry;";
         Logger.WriteLine($"Start {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
 
         var expectedResult = new TestObject<int, int>(i, i);
-        Thing thing = new("object", expectedResult.Key);
+        Thing thing = Thing.From("object", expectedResult.Key);
 
         var createResponse = await db.Create(thing, expectedResult).ConfigureAwait(false);
         AssertResponse(createResponse, expectedResult);

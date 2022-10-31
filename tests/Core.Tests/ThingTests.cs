@@ -64,14 +64,14 @@ public class ThingTests {
     public static List<object[]> ComplexStringKeys => Keys.SelectMany(s => ComplexChars.Select(c => string.Format(s, c))).Select(e => new object[]{e}).ToList();
     public static List<object[]> NumberKeys => Numbers.Select(e => new []{e, e.GetType()}).ToList();
     public static List<object[]> ObjectKeys => Objects.Select(e => new []{e.key, e.expectedKey, e.shouldBeEscaped, e.key.GetType()}).ToList();
-    
+
     [Fact]
     public void TableStringNoKeyThing() {
         var table = "TableName";
 
-        var thing = new Thing(table);
+        Thing thing = table;
         Logger.WriteLine("Thing: {0}", thing);
-        
+
         thing.ToString().Should().BeEquivalentTo(table);
         thing.Table.ToString().Should().BeEquivalentTo(table);
         thing.TableAndSeparator.ToString().Should().BeEquivalentTo(table);
@@ -80,16 +80,16 @@ public class ThingTests {
         thing.HasKey.Should().BeFalse();
         thing.ToUri().Should().BeEquivalentTo(table);
     }
-    
+
     [Theory]
     [MemberData(nameof(StandardStringKeys))]
     public void TableAndStringKeyThing(string key) {
         var table = "TableName";
         var expectedThing = $"{table}:{key}";
 
-        var thing = new Thing(table, key);
+        Thing thing = (table, key);
         Logger.WriteLine("Thing: {0}", thing);
-        
+
         thing.ToString().Should().BeEquivalentTo(expectedThing);
         thing.Table.ToString().Should().BeEquivalentTo(table);
         thing.TableAndSeparator.ToString().Should().BeEquivalentTo($"{table}:");
@@ -98,14 +98,14 @@ public class ThingTests {
         thing.HasKey.Should().BeTrue();
         thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(key)}");
     }
-    
+
     [Theory]
     [MemberData(nameof(StandardStringKeys))]
     public void TableAndStringKeyFromStringThing(string key) {
         var table = "TableName";
         var expectedThing = $"{table}:{key}";
 
-        var thing = new Thing(expectedThing);
+        Thing thing = expectedThing;
         Logger.WriteLine("Thing: {0}", thing);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -116,15 +116,15 @@ public class ThingTests {
         thing.HasKey.Should().BeTrue();
         thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(key)}");
     }
-    
+
     [Theory]
     [MemberData(nameof(ComplexStringKeys))]
     public void TableAndStringKeyWithComplexCharacterThing(string key) {
         var table = "TableName";
-        var escapedKey = $"{Thing.CHAR_PRE}{key}{Thing.CHAR_SUF}";
+        var escapedKey = $"{ThingHelper.PREFIX}{key}{ThingHelper.SUFFIX}";
         var expectedThing = $"{table}:{escapedKey}";
 
-        var thing = new Thing(table, key);
+        var thing = Thing.From(table, key);
         Logger.WriteLine("Thing: {0}", thing);
 
         thing.ToString().Should().BeEquivalentTo(expectedThing);
@@ -135,17 +135,17 @@ public class ThingTests {
         thing.HasKey.Should().BeTrue();
         thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(key)}");
     }
-    
+
     [Theory]
     [MemberData(nameof(ComplexStringKeys))]
     public void TableAndStringKeyAlreadyEscapedThing(string key) {
         var table = "TableName";
-        var escapedKey = $"{Thing.CHAR_PRE}{key}{Thing.CHAR_SUF}";
+        var escapedKey = $"{ThingHelper.PREFIX}{key}{ThingHelper.SUFFIX}";
         var expectedThing = $"{table}:{escapedKey}";
 
-        var thing = new Thing(table, escapedKey);
+        var thing = Thing.From(table, escapedKey);
         Logger.WriteLine("Thing: {0}", thing);
-        
+
         thing.ToString().Should().BeEquivalentTo(expectedThing);
         thing.Table.ToString().Should().BeEquivalentTo(table);
         thing.TableAndSeparator.ToString().Should().BeEquivalentTo($"{table}:");
@@ -154,35 +154,35 @@ public class ThingTests {
         thing.HasKey.Should().BeTrue();
         thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(key)}");
     }
-    
+
     [Theory]
     [MemberData(nameof(NumberKeys))]
     public void TableAndNumberKeyThing(object key, Type type) {
         var table = "TableName";
         var expectedThing = $"{table}:{key}";
 
-        var thing = new Thing(table, key);
+        var thing = Thing.From(table, key);
         Logger.WriteLine("Thing: {0} ({1})", thing, type);
-        
+
         thing.ToString().Should().BeEquivalentTo(expectedThing);
         thing.Table.ToString().Should().BeEquivalentTo(table);
         thing.TableAndSeparator.ToString().Should().BeEquivalentTo($"{table}:");
         thing.Key.ToString().Should().BeEquivalentTo(key.ToString());
         thing.IsKeyEscaped.Should().BeFalse();
         thing.HasKey.Should().BeTrue();
-        thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(key.ToString())}");
+        thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(key.ToString()!)}");
     }
-    
+
     [Theory]
     [MemberData(nameof(ObjectKeys))]
     public void TableAndObjectKeyThing(object key, string unescapedKey, bool shouldBeEscaped, Type type) {
         var table = "TableName";
-        string expectedKey = shouldBeEscaped ? $"{Thing.CHAR_PRE}{unescapedKey}{Thing.CHAR_SUF}" : unescapedKey;
-        string expectedThing = $"{table}{Thing.CHAR_SEP}{expectedKey}";
+        string expectedKey = shouldBeEscaped ? $"{ThingHelper.PREFIX}{unescapedKey}{ThingHelper.SUFFIX}" : unescapedKey;
+        string expectedThing = $"{table}{ThingHelper.SEPARATOR}{expectedKey}";
 
-        var thing = new Thing(table, key);
+        var thing = (table, key).ToThing();
         Logger.WriteLine("Thing: {0} ({1})", thing, type);
-        
+
         thing.ToString().Should().BeEquivalentTo(expectedThing);
         thing.Table.ToString().Should().BeEquivalentTo(table);
         thing.TableAndSeparator.ToString().Should().BeEquivalentTo($"{table}:");
@@ -190,5 +190,24 @@ public class ThingTests {
         thing.IsKeyEscaped.Should().Be(shouldBeEscaped);
         thing.HasKey.Should().BeTrue();
         thing.ToUri().Should().BeEquivalentTo($"{table}/{Uri.EscapeDataString(unescapedKey)}");
+    }
+
+    [Fact]
+    public void NullThingPropertyAccessors() {
+        Thing t = default;
+        t.HasKey.Should().BeFalse();
+        t.Table.ToString().Should().BeEmpty();
+        t.TableAndSeparator.ToString().Should().BeEmpty();
+        t.Key.ToString().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void NullThingSerialized() {
+        Thing t = default;
+        var json = JsonSerializer.Serialize(t, SerializerOptions.Shared);
+        json.Should().Be("\"\"");
+        Thing empty = "";
+        var emptyJson = JsonSerializer.Serialize(empty, SerializerOptions.Shared);
+        emptyJson.Should().BeEquivalentTo(json);
     }
 }

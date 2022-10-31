@@ -24,7 +24,6 @@ public abstract class DatabaseTestDriver<T>
         var signInStatus = await db.Signin(new RootAuth(TestHelper.User, TestHelper.Pass));
 
         TestHelper.AssertOk(signInStatus);
-        //AssertOk(await db.Invalidate());
 
         (string id1, string id2) = ("id1", "id2");
         var res1 = await db.Create(
@@ -51,14 +50,14 @@ public abstract class DatabaseTestDriver<T>
 
         TestHelper.AssertOk(res2);
 
-        Thing thing2 = new("person", id2);
+        Thing thing2 = ("person", id2);
         TestHelper.AssertOk(await db.Update(thing2, new { Marketing = false, }));
 
         TestHelper.AssertOk(await db.Select(thing2));
 
         TestHelper.AssertOk(await db.Delete(thing2));
 
-        Thing thing1 = new("person", id1);
+        Thing thing1 = ("person", id1);
         TestHelper.AssertOk(
             await db.Change(
                 thing1,
