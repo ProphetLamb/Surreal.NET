@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 
+[assembly: CLSCompliant(true)]
 [assembly: InternalsVisibleTo("SurrealDB.Abstractions")]
 [assembly: InternalsVisibleTo("SurrealDB.Configuration")]
 [assembly: InternalsVisibleTo("SurrealDB.Driver.Rest")]
