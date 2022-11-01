@@ -38,7 +38,7 @@ public sealed class WsClient : IDisposable {
         _rxProducer = new(rx.Writer, _memoryManager.BlockSize);
         _rxConsumer = new(_ws, rx.Reader, _memoryManager.BlockSize);
         var tx = Channel.CreateBounded<WsMessageReader>(options.ChannelTxMessagesMax);
-        _txConsumer = new(tx.Reader, options.ReceiveHeaderBytesMax);
+        _txConsumer = new(tx.Reader, options.ReceiveHeaderBytesMax, options.RequestExpiration, TimeSpan.FromSeconds(1));
         _txProducer = new(_ws, tx.Writer, _memoryManager, _memoryManager.BlockSize);
 
         _idBytes = options.IdBytes;
@@ -88,7 +88,7 @@ public sealed class WsClient : IDisposable {
 
         // listen for the response
         ResponseHandler handler = new(req.id, ct);
-        if (!_txConsumer.TryRegister(handler)) {
+        if (!_txConsumer.RegisterOrGet(handler)) {
             return default;
         }
         // send request

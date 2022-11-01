@@ -43,11 +43,19 @@ public sealed record WsClientOptions : ValidateReadonly {
         set => Set(out _memoryManager, in value);
     }
 
+    /// <summary>The maximum time a request is awaited, before a <see cref="OperationCanceledException"/> is thrown.</summary>
+    /// <remarks>Limited by the internal cache eviction timeout (1s) & pressure/traffic.</remarks>
+    public TimeSpan RequestExpiration {
+        get => _requestExpiration;
+        set => Set(out _requestExpiration, value);
+    }
+
     private RecyclableMemoryStreamManager? _memoryManager;
     private int _idBytes = 6;
     private int _receiveHeaderBytesMax = 512;
     private int _channelTxMessagesMax = 256;
     private int _channelRxMessagesMax = 256;
+    private TimeSpan _requestExpiration = TimeSpan.FromSeconds(10);
 
     public void ValidateAndMakeReadonly() {
         if (!IsReadonly()) {
@@ -81,6 +89,10 @@ public sealed record WsClientOptions : ValidateReadonly {
 
         if (_memoryManager is null) {
             yield return (nameof(MemoryManager), "cannot be null");
+        }
+
+        if (RequestExpiration <= TimeSpan.Zero) {
+            yield return (nameof(RequestExpiration), "expiration time cannot be less then or equal to zero");
         }
     }
 

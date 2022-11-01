@@ -10,14 +10,15 @@ namespace SurrealDB.Ws;
 /// <summary>Listens for <see cref="WsMessageReader"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
 internal sealed class WsTxConsumer : IDisposable {
     private readonly ChannelReader<WsMessageReader> _in;
-    private readonly ConcurrentDictionary<string, IHandler> _handlers = new();
+    private readonly DisposingCache<string, IHandler> _handlers;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsTxConsumer(ChannelReader<WsMessageReader> channel, int maxHeaderBytes) {
+    public WsTxConsumer(ChannelReader<WsMessageReader> channel, int maxHeaderBytes, TimeSpan cacheSlidingExpiration, TimeSpan cacheEvictionInterval) {
         _in = channel;
         MaxHeaderBytes = maxHeaderBytes;
+        _handlers = new(cacheSlidingExpiration, cacheEvictionInterval);
     }
 
     public int MaxHeaderBytes { get; }
@@ -81,7 +82,7 @@ internal sealed class WsTxConsumer : IDisposable {
         }
     }
 
-    public bool TryRegister(IHandler handler) {
+    public bool RegisterOrGet(IHandler handler) {
         return _handlers.TryAdd(handler.Id, handler);
     }
 
