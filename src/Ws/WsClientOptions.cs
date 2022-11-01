@@ -9,13 +9,8 @@ namespace SurrealDB.Ws;
 public sealed record WsClientOptions : ValidateReadonly {
     public const int MaxArraySize = 0X7FFFFFC7;
 
-    /// <summary>The maximum number of messages in the client outbound channel.</summary>
-    /// <remarks>A message may consist of multiple blocks. Only the message counts towards this number.</remarks>
-    public int ChannelRxMessagesMax {
-        get => _channelRxMessagesMax;
-        set => Set(out _channelRxMessagesMax, in value);
-    }
-    /// <summary>The maximum number of messages in the client inbound channel.</summary>
+    /// <summary>The maximum number of messages in the client inbound channel.
+    /// This does not refer to the number of simultaneous queries, but the number of unread messages, the size of the "inbox"</summary>
     /// <remarks>A message may consist of multiple blocks. Only the message counts towards this number.</remarks>
     public int ChannelTxMessagesMax {
         get => _channelTxMessagesMax;
@@ -54,7 +49,6 @@ public sealed record WsClientOptions : ValidateReadonly {
     private int _idBytes = 6;
     private int _receiveHeaderBytesMax = 512;
     private int _channelTxMessagesMax = 256;
-    private int _channelRxMessagesMax = 256;
     private TimeSpan _requestExpiration = TimeSpan.FromSeconds(10);
 
     public void ValidateAndMakeReadonly() {
@@ -65,13 +59,6 @@ public sealed record WsClientOptions : ValidateReadonly {
     }
 
     protected override IEnumerable<(string PropertyName, string Message)> Validations() {
-        if (ChannelRxMessagesMax <= 0) {
-            yield return (nameof(ChannelRxMessagesMax), "cannot be less then or equal to zero");
-        }
-        if (ChannelRxMessagesMax > MaxArraySize) {
-            yield return (nameof(ChannelRxMessagesMax), "cannot be greater then MaxArraySize");
-        }
-
         if (ChannelTxMessagesMax <= 0) {
             yield return (nameof(ChannelTxMessagesMax), "cannot be less then or equal to zero");
         }
