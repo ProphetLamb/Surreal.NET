@@ -27,7 +27,6 @@ public struct WsRxConsumer : IDisposable {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
             await Consume(ct).Inv();
-            ct.ThrowIfCancellationRequested();
         }
     }
 
@@ -59,10 +58,10 @@ public struct WsRxConsumer : IDisposable {
         }
     }
 
-    public Task Close() {
+    public async Task Close() {
+        ThrowIfDisconnected();
         Task task;
         lock (_lock) {
-            ThrowIfDisconnected();
             task = _execute;
             _cts.Cancel();
             _cts.Dispose(); // not relly needed here
@@ -70,7 +69,11 @@ public struct WsRxConsumer : IDisposable {
             _execute = null;
         }
 
-        return task;
+        try {
+            await task.Inv();
+        } catch (OperationCanceledException) {
+            // expected on close using cts
+        }
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]

@@ -37,7 +37,6 @@ public struct WsTxProducer : IDisposable {
             } finally {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
-            ct.ThrowIfCancellationRequested();
         }
     }
 
@@ -56,8 +55,6 @@ public struct WsTxProducer : IDisposable {
             // receive more parts
             result = await _ws.ReceiveAsync(buffer, ct).Inv();
             await msg.AppendResultAsync(buffer, result, ct).Inv();
-
-            ct.ThrowIfCancellationRequested();
         }
 
         // finish adding the message to the output
@@ -76,7 +73,7 @@ public struct WsTxProducer : IDisposable {
         }
     }
 
-    public Task Close() {
+    public async Task Close() {
         Task task;
         lock (_lock) {
             ThrowIfDisconnected();
@@ -86,7 +83,14 @@ public struct WsTxProducer : IDisposable {
             _cts = null;
             _execute = null;
         }
-        return task;
+
+        try {
+            await task.Inv();
+        } catch (OperationCanceledException) {
+            // expected on close using cts
+        } catch (WebSocketException) {
+            // expected when the socket is closed before the receiver
+        }
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]

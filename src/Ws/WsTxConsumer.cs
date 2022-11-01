@@ -30,8 +30,6 @@ internal struct WsTxConsumer : IDisposable {
 
         while (!ct.IsCancellationRequested) {
             await Consume(ct).Inv();
-
-            ct.ThrowIfCancellationRequested();
         }
     }
 
@@ -94,16 +92,21 @@ internal struct WsTxConsumer : IDisposable {
     }
 
     public async Task Close() {
+        ThrowIfDisconnected();
         Task task;
         lock (_lock) {
-            ThrowIfDisconnected();
             task = _execute;
             _cts.Cancel();
             _cts.Dispose(); // not relly needed here
             _cts = null;
             _execute = null;
         }
-        await task.Inv();
+
+        try {
+            await task.Inv();
+        } catch (OperationCanceledException) {
+            // expected on close using cts
+        }
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]
