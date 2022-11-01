@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-using Microsoft.IO;
-
 namespace SurrealDB.Common;
 
 /// <summary>Allows reading a stream efficiently</summary>
@@ -26,8 +24,9 @@ public struct BufferStreamReader : IDisposable {
     public BufferStreamReader(Stream stream, int bufferSize) {
         ThrowArgIfStreamCantRead(stream);
         this = stream switch {
-            RecyclableMemoryStream => new(stream, null, bufferSize), // TryGetBuffer is expensive!
-            MemoryStream ms => new(null, ms, bufferSize),
+            // inhering from ms doesnt guarantee a good GetBuffer impl, such as RecyclableMemoryStream,
+            // therefore we have to check the exact runtime type.
+            MemoryStream ms when ms.GetType() == typeof(MemoryStream) => new(null, ms, bufferSize),
             _ => new(stream, null, bufferSize)
         };
     }
