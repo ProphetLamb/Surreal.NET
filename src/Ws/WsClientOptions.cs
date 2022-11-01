@@ -84,5 +84,11 @@ public sealed record WsClientOptions : ValidateReadonly {
         }
     }
 
-    internal static WsClientOptions Default => new();
+    public static WsClientOptions Default { get; } = CreateDefault();
+
+    private static WsClientOptions CreateDefault() {
+        WsClientOptions o = new() { MemoryManager = new(), };
+        o.ValidateAndMakeReadonly();
+        return o;
+    }
 }
