@@ -20,6 +20,6 @@ public sealed class WsRxProducer : IDisposable {
     }
 
     public void Dispose() {
-        _channel.Complete();
+        _channel.TryComplete();
     }
 }

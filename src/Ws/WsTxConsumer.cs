@@ -125,7 +125,7 @@ internal sealed class WsTxConsumer : IDisposable {
     }
 
     public void Dispose() {
-        _cts?.Cancel();
         _cts?.Dispose();
+        _cts = null;
     }
 }

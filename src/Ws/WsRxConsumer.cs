@@ -91,5 +91,6 @@ public sealed class WsRxConsumer : IDisposable {
 
     public void Dispose() {
         _cts?.Dispose();
+        _cts = null;
     }
 }

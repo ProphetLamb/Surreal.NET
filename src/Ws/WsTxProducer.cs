@@ -108,6 +108,7 @@ public sealed class WsTxProducer : IDisposable {
 
     public void Dispose() {
         _cts?.Dispose();
-        _out.Complete();
+        _cts = null;
+        _out.TryComplete();
     }
 }
