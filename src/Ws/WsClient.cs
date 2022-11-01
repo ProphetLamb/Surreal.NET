@@ -60,10 +60,10 @@ public sealed class WsClient : IDisposable {
     ///     Closes the connection to the Surreal server.
     /// </summary>
     public async Task CloseAsync(CancellationToken ct = default) {
-        await _ws.CloseAsync(WebSocketCloseStatus.Empty, "client connection closed orderly", ct).Inv();
+        await _rxConsumer.Close().Inv();
         await _txProducer.Close().Inv();
         await _txConsumer.Close().Inv();
-        await _rxConsumer.Close().Inv();
+        await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "client connection closed orderly", ct).Inv();
     }
 
     /// <inheritdoc cref="IDisposable" />

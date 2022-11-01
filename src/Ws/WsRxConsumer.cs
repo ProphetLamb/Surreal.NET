@@ -69,6 +69,7 @@ public struct WsRxConsumer : IDisposable {
             _cts = null;
             _execute = null;
         }
+
         return task;
     }
 
