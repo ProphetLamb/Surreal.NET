@@ -6,17 +6,17 @@ namespace SurrealDB.Common;
 public static class TaskExtensions {
     /// <summary>The task is <see cref="SynchronizationContext"/> invariant.</summary>
     /// <remarks>Equivalent to <code>Task.ConfigureAwait(false)</code>.</remarks>
-    public static ConfiguredTaskAwaitable Inv(this Task t) => t.Inv();
+    public static ConfiguredTaskAwaitable Inv(this Task t) => t.ConfigureAwait(false);
 
     /// <summary>The task is <see cref="SynchronizationContext"/> invariant.</summary>
     /// <remarks>Equivalent to <code>Task.ConfigureAwait(false)</code>.</remarks>
-    public static ConfiguredTaskAwaitable<T> Inv<T>(this Task<T> t) => t.Inv();
+    public static ConfiguredTaskAwaitable<T> Inv<T>(this Task<T> t) => t.ConfigureAwait(false);
 
     /// <summary>The task is <see cref="SynchronizationContext"/> invariant.</summary>
     /// <remarks>Equivalent to <code>Task.ConfigureAwait(false)</code>.</remarks>
-    public static ConfiguredValueTaskAwaitable Inv(this ValueTask t) => t.Inv();
+    public static ConfiguredValueTaskAwaitable Inv(this ValueTask t) => t.ConfigureAwait(false);
 
     /// <summary>The task is <see cref="SynchronizationContext"/> invariant.</summary>
     /// <remarks>Equivalent to <code>Task.ConfigureAwait(false)</code>.</remarks>
-    public static ConfiguredValueTaskAwaitable<T> Inv<T>(this ValueTask<T> t) => t.Inv();
+    public static ConfiguredValueTaskAwaitable<T> Inv<T>(this ValueTask<T> t) => t.ConfigureAwait(false);
 }
