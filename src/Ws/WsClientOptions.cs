@@ -50,8 +50,10 @@ public sealed record WsClientOptions : ValidateReadonly {
     private int _channelRxMessagesMax = 256;
 
     public void ValidateAndMakeReadonly() {
-        ValidateOrThrow();
-        MakeReadonly();
+        if (!IsReadonly()) {
+            ValidateOrThrow();
+            MakeReadonly();
+        }
     }
 
     protected override IEnumerable<(string PropertyName, string Message)> Validations() {

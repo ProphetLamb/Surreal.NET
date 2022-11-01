@@ -8,26 +8,27 @@ using Microsoft.IO;
 namespace SurrealDB.Common;
 
 /// <summary>Allows reading a stream efficiently</summary>
-public struct BufferStreamReader : IDisposable, IAsyncDisposable {
-    public const int BUFFER_SIZE = 16 * 1024;
+public struct BufferStreamReader : IDisposable {
     private Stream? _arbitraryStream;
     private MemoryStream? _memoryStream;
+    private readonly int _bufferSize;
     private byte[]? _poolArray;
 
-    private BufferStreamReader(Stream? arbitraryStream, MemoryStream? memoryStream) {
+    private BufferStreamReader(Stream? arbitraryStream, MemoryStream? memoryStream, int bufferSize) {
         _arbitraryStream = arbitraryStream;
         _memoryStream = memoryStream;
+        _bufferSize = bufferSize;
         _poolArray = null;
     }
 
     public Stream Stream => _memoryStream ?? _arbitraryStream!;
 
-    public BufferStreamReader(Stream stream) {
+    public BufferStreamReader(Stream stream, int bufferSize) {
         ThrowArgIfStreamCantRead(stream);
         this = stream switch {
-            RecyclableMemoryStream => new(stream, null), // TryGetBuffer is expensive!
-            MemoryStream ms => new(null, ms),
-            _ => new(stream, null)
+            RecyclableMemoryStream => new(stream, null, bufferSize), // TryGetBuffer is expensive!
+            MemoryStream ms => new(null, ms, bufferSize),
+            _ => new(stream, null, bufferSize)
         };
     }
 
@@ -55,7 +56,7 @@ public struct BufferStreamReader : IDisposable, IAsyncDisposable {
         // reserve the buffer
         var buffer = _poolArray;
         if (buffer is null) {
-            _poolArray = buffer = ArrayPool<byte>.Shared.Rent(BUFFER_SIZE);
+            _poolArray = buffer = ArrayPool<byte>.Shared.Rent(_bufferSize);
         }
 
         // negative buffer size -> read as much as possible
@@ -84,7 +85,7 @@ public struct BufferStreamReader : IDisposable, IAsyncDisposable {
         // reserve the buffer
         var buffer = _poolArray;
         if (buffer is null) {
-            _poolArray = buffer = ArrayPool<byte>.Shared.Rent(BUFFER_SIZE);
+            _poolArray = buffer = ArrayPool<byte>.Shared.Rent(_bufferSize);
         }
 
         return stream.ReadToBuffer(buffer.AsSpan(0, Math.Min(buffer.Length, expectedSize)));
@@ -96,26 +97,6 @@ public struct BufferStreamReader : IDisposable, IAsyncDisposable {
         _arbitraryStream = null;
         _memoryStream?.Dispose();
         _memoryStream = null;
-
-        var poolArray = _poolArray;
-        _poolArray = null;
-        if (poolArray is not null) {
-            ArrayPool<byte>.Shared.Return(poolArray);
-        }
-    }
-
-    public async ValueTask DisposeAsync() {
-        var arbitraryStream = _arbitraryStream;
-        _arbitraryStream = null;
-        if (arbitraryStream is not null) {
-            await arbitraryStream.DisposeAsync().Inv();
-        }
-
-        var memoryStream = _memoryStream;
-        _memoryStream = null;
-        if (memoryStream is not null) {
-            await memoryStream.DisposeAsync().Inv();
-        }
 
         var poolArray = _poolArray;
         _poolArray = null;

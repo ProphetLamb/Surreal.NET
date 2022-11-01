@@ -11,7 +11,7 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Receives messages from a websocket server and passes them to a channel</summary>
-public sealed class WsTxReader : IDisposable {
+public struct WsTxProducer : IDisposable {
     private readonly ClientWebSocket _ws;
     private readonly ChannelWriter<WsMessageReader> _out;
     private readonly RecyclableMemoryStreamManager _memoryManager;
@@ -19,16 +19,19 @@ public sealed class WsTxReader : IDisposable {
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsTxReader(ClientWebSocket ws, ChannelWriter<WsMessageReader> @out, RecyclableMemoryStreamManager memoryManager) {
+    private readonly int _blockSize;
+
+    public WsTxProducer(ClientWebSocket ws, ChannelWriter<WsMessageReader> @out, RecyclableMemoryStreamManager memoryManager, int blockSize) {
         _ws = ws;
         _out = @out;
         _memoryManager = memoryManager;
+        _blockSize = blockSize;
     }
 
     private async Task Execute(CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
-            var buffer = ArrayPool<byte>.Shared.Rent(BufferStreamReader.BUFFER_SIZE);
+            var buffer = ArrayPool<byte>.Shared.Rent(_blockSize);
             try {
                 await ReceiveMessage(ct, buffer).Inv();
             } finally {

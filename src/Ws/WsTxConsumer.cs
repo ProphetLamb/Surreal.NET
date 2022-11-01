@@ -11,18 +11,16 @@ using SurrealDB.Common;
 
 namespace SurrealDB.Ws;
 
-/// <summary>Listens for <see cref="WsMessage"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
-internal sealed class WsTxClient : IDisposable {
+/// <summary>Listens for <see cref="WsMessageReader"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
+internal struct WsTxConsumer : IDisposable {
     private readonly ChannelReader<WsMessageReader> _in;
-    private readonly WsTxReader _tx;
     private readonly ConcurrentDictionary<string, IHandler> _handlers = new();
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsTxClient(ClientWebSocket ws, Channel<WsMessageReader> channel, RecyclableMemoryStreamManager memoryManager, int maxHeaderBytes) {
-        _in = channel.Reader;
-        _tx = new(ws, channel.Writer, memoryManager);
+    public WsTxConsumer(ChannelReader<WsMessageReader> channel, int maxHeaderBytes) {
+        _in = channel;
         MaxHeaderBytes = maxHeaderBytes;
     }
 
@@ -93,11 +91,9 @@ internal sealed class WsTxClient : IDisposable {
             _cts = new();
             _execute = Execute(_cts.Token);
         }
-        _tx.Open();
     }
 
     public async Task Close() {
-        await _tx.Close().Inv();
         Task task;
         lock (_lock) {
             ThrowIfDisconnected();
@@ -110,21 +106,18 @@ internal sealed class WsTxClient : IDisposable {
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]
     private void ThrowIfDisconnected() {
-        Debug.Assert(_tx.Connected == Connected);
         if (!Connected) {
             throw new InvalidOperationException("The connection is not open.");
         }
     }
 
     private void ThrowIfConnected() {
-        Debug.Assert(_tx.Connected == Connected);
         if (Connected) {
             throw new InvalidOperationException("The connection is already open");
         }
     }
 
     public void Dispose() {
-        _tx.Dispose();
         _cts?.Cancel();
         _cts?.Dispose();
         _execute?.Dispose();
