@@ -115,23 +115,8 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            DateTime? doc = result.GetObject<DateTime>();
+            DateTime? doc = result.AsObject<DateTime>();
             doc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(10));
-        }
-    );
-
-    [Fact]
-    public async Task SimpleArrayResultQueryTest() => await DbHandle<T>.WithDatabase(
-        async db => {
-            List<int> expectedObject = new() { 1, 2, 3 };
-            string sql = "SELECT * FROM [1, 2, 3]";
-
-            var response = await db.Query(sql, null);
-
-            TestHelper.AssertOk(response);
-            ResultValue result = response.FirstValue();
-            List<int>? doc = result.GetObject<List<int>>();
-            doc.Should().Equal(expectedObject);
         }
     );
 
@@ -145,7 +130,7 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<OldVehicleResponse>? doc = result.GetObject<List<OldVehicleResponse>>();
+            List<OldVehicleResponse>? doc = result.AsObject<List<OldVehicleResponse>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -162,7 +147,7 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<VehicleTypeResult>? doc = result.GetObject<List<VehicleTypeResult>>();
+            List<VehicleTypeResult>? doc = result.AsObject<List<VehicleTypeResult>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -177,7 +162,7 @@ public abstract class GeneralQueryTests<T>
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<FlatWheelResult>? doc = result.GetObject<List<FlatWheelResult>>();
+            List<FlatWheelResult>? doc = result.AsObject<List<FlatWheelResult>>();
             doc.Should().BeEquivalentTo(expectedObject);
         }
     );
@@ -195,7 +180,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            List<GroupedCountries>? doc = result.GetObject<List<GroupedCountries>>();
+            List<GroupedCountries>? doc = result.AsObject<List<GroupedCountries>>();
             doc.Should().HaveCount(2);
         }
     );
@@ -209,7 +194,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            string? doc = result.GetObject<string>();
+            string? doc = result.AsObject<string>();
             doc.Should().BeEquivalentTo("4768b3fc7ac751e03a614e2349abf3bf");
         }
     );
@@ -219,7 +204,7 @@ GROUP BY RegisteredCountry;";
         async db => {
             MathRequestDocument expectedObject = new() { f1 = 1, f2 = 1, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
-        Thing thing = new("object", ThreadRng.Shared.Next());
+        Thing thing = Thing.From("object", ThreadRng.Shared.Next());
         await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -228,7 +213,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().BeEquivalentTo(expectedResult);
         }
     );
@@ -239,7 +224,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.Epsilon, f2 = float.Epsilon, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = Thing.From("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -248,7 +233,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().NotBeNull();
             doc!.result.Should().BeApproximately(expectedResult.result, 0.000001f);
         }
@@ -260,7 +245,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.MinValue, f2 = float.MaxValue, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 + expectedObject.f2 };
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = Thing.From("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 + f2) as result FROM $record";
@@ -269,7 +254,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().NotBeNull();
             doc!.result.Should().BeApproximately(expectedResult.result, 0.001f);
         }
@@ -281,7 +266,7 @@ GROUP BY RegisteredCountry;";
             MathRequestDocument expectedObject = new() { f1 = float.MaxValue, f2 = float.MinValue, };
             var expectedResult = new MathResultDocument { result = expectedObject.f1 - expectedObject.f2 };
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = Thing.From("object", ThreadRng.Shared.Next());
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT (f1 - f2) as result FROM $record";
@@ -290,7 +275,7 @@ GROUP BY RegisteredCountry;";
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            MathResultDocument? doc = result.GetObject<MathResultDocument>();
+            MathResultDocument? doc = result.AsObject<MathResultDocument>();
             doc.Should().BeEquivalentTo(expectedResult);
         }
     );
@@ -304,10 +289,13 @@ GROUP BY RegisteredCountry;";
             var response = await db.Query(sql, null);
 
             TestHelper.AssertOk(response);
-            ResultValue result = response.FirstValue();
-            string? doc = result.GetObject<string>();
-            doc.Should().NotBeNull();
-            doc.Should().Be(expectedResult);
+            // we execute two stmts, let and select.
+            // let should return null
+            response.Oks.First().Value.AsObject<object>().Should().BeNull();
+            // select should be array of one string
+            var res = response.Oks.Skip(1).First().Value.AsEnumerable<string>();
+            res.Count.Should().Be(1);
+            res.First().Should().Be(expectedResult);
         }
     );
 
@@ -324,7 +312,7 @@ GROUP BY RegisteredCountry;";
         Logger.WriteLine($"Start {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
 
         var expectedResult = new TestObject<int, int>(i, i);
-        Thing thing = new("object", expectedResult.Key);
+        Thing thing = Thing.From("object", expectedResult.Key);
 
         var createResponse = await db.Create(thing, expectedResult).Inv();
         AssertResponse(createResponse, expectedResult);
@@ -346,7 +334,7 @@ GROUP BY RegisteredCountry;";
     private static void AssertResponse(DriverResponse response, TestObject<int, int> expectedResult) {
         TestHelper.AssertOk(response);
         Assert.True(response!.TryGetFirstValue(out ResultValue result));
-        TestObject<int, int>? doc = result.GetObject<TestObject<int, int>>();
+        TestObject<int, int>? doc = result.AsObject<TestObject<int, int>>();
         doc.Should().BeEquivalentTo(expectedResult);
     }
 }

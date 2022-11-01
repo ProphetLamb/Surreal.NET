@@ -28,7 +28,7 @@ public abstract class RoundTripTests<T>
 
     private static IEnumerable<RoundTripObject> DocumentsToTest {
         get {
-            yield return new RoundTripObject();
+            //yield return new RoundTripObject();
 
             for (int i = 4; i < 9; i++) {
                 var arraySize = 2 << i;
@@ -53,40 +53,40 @@ public abstract class RoundTripTests<T>
         async db => {
             Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = ("object", ThreadRng.Shared.Next()).ToThing();
             var response = await db.Create(thing, document);
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var returnedDocument = result.GetObject<RoundTripObject>();
+            var returnedDocument = result.AsObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
-    
+
     [Theory]
     [MemberData(nameof(Documents))]
     public async Task CreateAndSelectRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(
         async db => {
             Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = ("object", ThreadRng.Shared.Next()).ToThing();
             await db.Create(thing, document);
             var response = await db.Select(thing);
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
-            var returnedDocument = result.GetObject<RoundTripObject>();
+            var returnedDocument = result.AsObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
-    
+
     [Theory]
     [MemberData(nameof(Documents))]
     public async Task CreateAndQueryRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(
         async db => {
             Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
 
-            Thing thing = new("object", ThreadRng.Shared.Next());
+            Thing thing = ("object", ThreadRng.Shared.Next()).ToThing();
             await db.Create(thing, document);
             string sql = $"SELECT * FROM \"{thing}\"";
             var response = await db.Query(sql, null);
@@ -94,17 +94,17 @@ public abstract class RoundTripTests<T>
             response.Should().NotBeNull();
             TestHelper.AssertOk(response);
             response.TryGetFirstValue(out ResultValue result).Should().BeTrue();
-            var returnedDocument = result.GetObject<RoundTripObject>();
+            var returnedDocument = result.AsObject<RoundTripObject>();
             RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
-    
+
     [Theory]
     [MemberData(nameof(Documents))]
     public async Task CreateAndParameterizedQueryRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(async db => {
         Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
 
-        Thing thing = new("object", ThreadRng.Shared.Next());
+        Thing thing = ("object", ThreadRng.Shared.Next()).ToThing();
         var rsp = await db.Create(thing, document);
         rsp.HasErrors.Should().BeFalse();
         string sql = "SELECT * FROM $thing";
@@ -114,9 +114,35 @@ public abstract class RoundTripTests<T>
 
         TestHelper.AssertOk(response);
         ResultValue result = response.FirstValue();
-        var returnedDocument = result.GetObject<RoundTripObject>();
+        var returnedDocument = result.AsObject<RoundTripObject>();
         RoundTripObject.AssertAreEqual(document, returnedDocument);
     });
+
+    [Theory]
+    [MemberData(nameof(Documents))]
+    public async Task CreateManyAndQueryRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(
+        async db => {
+            var count = 10;
+            Logger.WriteLine("Document size in bytes: {0} x {1}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char), count);
+
+            for (int i = 0; i < count; i++) {
+                Thing thing = ("object", ThreadRng.Shared.Next()).ToThing();
+                await db.Create(thing, document);
+            }
+
+            string sql = "SELECT * FROM object";
+            var response = await db.Query(sql, null);
+
+            response.Should().NotBeNull();
+            TestHelper.AssertOk(response);
+            response.TryGetFirstValue(out ResultValue result).Should().BeTrue();
+            var returnedDocuments = result.AsEnumerable<RoundTripObject>().ToList();
+            returnedDocuments.Count.Should().Be(count);
+            foreach (var returnedDocument in returnedDocuments) {
+                RoundTripObject.AssertAreEqual(document, returnedDocument);
+            }
+        }
+    );
 }
 
 public class RoundTripObject {
