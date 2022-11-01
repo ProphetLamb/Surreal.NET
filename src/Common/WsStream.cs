@@ -1,6 +1,8 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 
 namespace SurrealDB.Common;
 
@@ -134,12 +136,12 @@ public sealed class WsStream : Stream {
         DisposePrefix();
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowWriteDisallowed() {
         throw new InvalidOperationException("Cannot write a readonly stream");
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static long ThrowSeekDisallowed() {
         throw new InvalidOperationException("Cannot seek in the stream");
     }

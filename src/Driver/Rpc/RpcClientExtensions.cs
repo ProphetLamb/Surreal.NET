@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 using SurrealDB.Common;
@@ -89,7 +91,7 @@ internal static class RpcClientExtensions {
         return DriverResponse.FromOwned(builder.AsSegment());
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowIdMissing() {
         throw new InvalidOperationException("Response does not have an id.");
     }

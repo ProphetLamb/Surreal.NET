@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
@@ -67,7 +68,7 @@ public class AggregatePropertyValidationException : Exception {
         return sb.ToString();
     }
 
-    [DoesNotReturn, MethodImpl(MethodImplOptions.NoInlining)]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     public static void Throw(string? message, (string, string)[]? errors = null, Exception? inner = default) {
         throw new AggregatePropertyValidationException(message, errors, inner);
     }

@@ -186,7 +186,7 @@ public sealed class WsMessageReader : Stream {
 
 #endregion
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowCantWrite() {
         throw new NotSupportedException("The stream does not support writing");
     }
