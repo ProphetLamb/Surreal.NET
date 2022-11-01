@@ -51,9 +51,9 @@ public sealed class WsClient : IDisposable {
     public async Task OpenAsync(Uri url, CancellationToken ct = default) {
         ThrowIfConnected();
         await _ws.ConnectAsync(url, ct).Inv();
-        _rxConsumer.Open();
         _txConsumer.Open();
         _txProducer.Open();
+        _rxConsumer.Open();
     }
 
     /// <summary>
@@ -61,17 +61,17 @@ public sealed class WsClient : IDisposable {
     /// </summary>
     public async Task CloseAsync(CancellationToken ct = default) {
         await _ws.CloseAsync(WebSocketCloseStatus.Empty, "client connection closed orderly", ct).Inv();
-        await _rxConsumer.Close().Inv();
         await _txProducer.Close().Inv();
         await _txConsumer.Close().Inv();
+        await _rxConsumer.Close().Inv();
     }
 
     /// <inheritdoc cref="IDisposable" />
     public void Dispose() {
         _rxProducer.Dispose();
         _rxConsumer.Dispose();
-        _txConsumer.Dispose();
         _txProducer.Dispose();
+        _txConsumer.Dispose();
         _ws.Dispose();
     }
 
