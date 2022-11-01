@@ -122,6 +122,5 @@ internal struct WsTxConsumer : IDisposable {
     public void Dispose() {
         _cts?.Cancel();
         _cts?.Dispose();
-        _execute?.Dispose();
     }
 }

@@ -87,6 +87,5 @@ public struct WsRxConsumer : IDisposable {
 
     public void Dispose() {
         _cts?.Dispose();
-        _execute?.Dispose();
     }
 }

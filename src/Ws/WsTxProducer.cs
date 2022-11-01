@@ -104,7 +104,6 @@ public struct WsTxProducer : IDisposable {
 
     public void Dispose() {
         _cts?.Dispose();
-        _execute?.Dispose();
         _out.Complete();
     }
 }
