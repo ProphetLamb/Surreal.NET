@@ -19,9 +19,9 @@ public sealed class WsClient : IDisposable {
     private readonly ClientWebSocket _ws = new();
     private readonly RecyclableMemoryStreamManager _memoryManager;
     private readonly WsRxProducer _rxProducer;
-    private WsRxConsumer _rxConsumer;
-    private WsTxConsumer _txConsumer;
-    private WsTxProducer _txProducer;
+    private readonly WsRxConsumer _rxConsumer;
+    private readonly WsTxConsumer _txConsumer;
+    private readonly WsTxProducer _txProducer;
 
     private readonly int _idBytes;
 
@@ -63,16 +63,16 @@ public sealed class WsClient : IDisposable {
         ThrowIfDisconnected();
         await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "client connection closed orderly", ct).Inv();
         await _rxConsumer.Close().Inv();
-        await _txProducer.Close().Inv();
         await _txConsumer.Close().Inv();
+        await _txProducer.Close().Inv();
     }
 
     /// <inheritdoc cref="IDisposable" />
     public void Dispose() {
-        _rxProducer.Dispose();
         _rxConsumer.Dispose();
-        _txProducer.Dispose();
+        _rxProducer.Dispose();
         _txConsumer.Dispose();
+        _txProducer.Dispose();
         _ws.Dispose();
     }
 

@@ -11,7 +11,7 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Receives messages from a websocket server and passes them to a channel</summary>
-public struct WsTxProducer : IDisposable {
+public sealed class WsTxProducer : IDisposable {
     private readonly ClientWebSocket _ws;
     private readonly ChannelWriter<WsMessageReader> _out;
     private readonly RecyclableMemoryStreamManager _memoryManager;

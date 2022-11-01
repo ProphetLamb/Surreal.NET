@@ -8,7 +8,7 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Listens for <see cref="WsMessageReader"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
-internal struct WsTxConsumer : IDisposable {
+internal sealed class WsTxConsumer : IDisposable {
     private readonly ChannelReader<WsMessageReader> _in;
     private readonly ConcurrentDictionary<string, IHandler> _handlers = new();
     private readonly object _lock = new();
@@ -38,6 +38,8 @@ internal struct WsTxConsumer : IDisposable {
 
         // receive the first part of the message
         var result = await message.ReceiveAsync(ct).Inv();
+        // throw if the result is a close ack
+        result.ThrowCancelIfClosed();
         // parse the header from the message
         WsHeader header = PeekHeader(message, result.Count);
 

@@ -8,7 +8,7 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Sends messages from a channel to a websocket server.</summary>
-public struct WsRxConsumer : IDisposable {
+public sealed class WsRxConsumer : IDisposable {
     private readonly ClientWebSocket _ws;
     private readonly ChannelReader<BufferStreamReader> _in;
     private readonly object _lock = new();

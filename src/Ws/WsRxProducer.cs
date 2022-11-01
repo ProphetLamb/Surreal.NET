@@ -4,7 +4,7 @@ using SurrealDB.Common;
 
 namespace SurrealDB.Ws;
 
-public readonly struct WsRxProducer : IDisposable {
+public sealed class WsRxProducer : IDisposable {
     private readonly ChannelWriter<BufferStreamReader> _channel;
     private readonly int _bufferSize;
 
