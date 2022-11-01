@@ -13,7 +13,6 @@ namespace SurrealDB.Ws;
 
 /// <summary>The client used to connect to the Surreal server via JSON RPC.</summary>
 public sealed class WsClient : IDisposable {
-    private static readonly Lazy<RecyclableMemoryStreamManager> s_manager = new(static () => new());
     // Do not get any funny ideas and fill this fucker up.
     private static readonly List<object?> s_emptyList = new();
 
@@ -99,8 +98,8 @@ public sealed class WsClient : IDisposable {
         return new(responseHeader.id, responseHeader.err, ExtractResult(body));
     }
 
-    private static async Task<RecyclableMemoryStream> SerializeAsync(Request req, CancellationToken ct) {
-        RecyclableMemoryStream stream = new(s_manager.Value);
+    private async Task<RecyclableMemoryStream> SerializeAsync(Request req, CancellationToken ct) {
+        RecyclableMemoryStream stream = new(_memoryManager);
 
         await JsonSerializer.SerializeAsync(stream, req, SerializerOptions.Shared, ct).Inv();
         // position = Length = EndOfMessage -> position = 0
