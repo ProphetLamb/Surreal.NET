@@ -1,20 +1,24 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
+using Microsoft.IO;
+
 using SurrealDB.Common;
 
 namespace SurrealDB.Ws;
 
 public sealed class WsMessageReader : Stream {
-    private readonly Channel<WebSocketReceiveResult> _channel = Channel.CreateUnbounded<WebSocketReceiveResult>();
-    private readonly MemoryStream _stream;
+    private readonly BoundedChannel<WebSocketReceiveResult> _channel;
+    private readonly RecyclableMemoryStream _stream;
     private int _endOfMessage;
 
-    internal WsMessageReader(MemoryStream stream) {
-        _stream = stream;
+    internal WsMessageReader(RecyclableMemoryStreamManager memoryManager, int channelCapacity) {
+        _stream = new(memoryManager);
+        _channel = BoundedChannelPool<WebSocketReceiveResult>.Shared.Rent(channelCapacity);
         _endOfMessage = 0;
     }
 
@@ -27,6 +31,7 @@ public sealed class WsMessageReader : Stream {
 
         Interlocked.MemoryBarrierProcessWide();
         _stream.Dispose();
+        _channel.Dispose();
     }
 
     private async ValueTask SetReceivedAsync(WebSocketReceiveResult result, CancellationToken ct) {
