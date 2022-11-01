@@ -20,8 +20,7 @@ public sealed class WsClient : IDisposable {
 
     private readonly ClientWebSocket _ws = new();
     private readonly RecyclableMemoryStreamManager _memoryManager;
-    private readonly WsRxProducer _rxProducer;
-    private readonly WsRxConsumer _rxConsumer;
+    private readonly WsRx _rx;
     private readonly WsTxConsumer _txConsumer;
     private readonly WsTxProducer _txProducer;
 
@@ -34,9 +33,7 @@ public sealed class WsClient : IDisposable {
     public WsClient(WsClientOptions options) {
         options.ValidateAndMakeReadonly();
         _memoryManager = options.MemoryManager;
-        var rx = Channel.CreateBounded<BufferStreamReader>(options.ChannelRxMessagesMax);
-        _rxProducer = new(rx.Writer, _memoryManager.BlockSize);
-        _rxConsumer = new(_ws, rx.Reader, _memoryManager.BlockSize);
+        _rx = new(_ws, _memoryManager.BlockSize);
         var tx = Channel.CreateBounded<WsMessageReader>(options.ChannelTxMessagesMax);
         _txConsumer = new(tx.Reader, options.ReceiveHeaderBytesMax, options.RequestExpiration, TimeSpan.FromSeconds(1));
         _txProducer = new(_ws, tx.Writer, _memoryManager, _memoryManager.BlockSize);
@@ -55,7 +52,6 @@ public sealed class WsClient : IDisposable {
         await _ws.ConnectAsync(url, ct).Inv();
         _txConsumer.Open();
         _txProducer.Open();
-        _rxConsumer.Open();
     }
 
     /// <summary>
@@ -64,15 +60,12 @@ public sealed class WsClient : IDisposable {
     public async Task CloseAsync(CancellationToken ct = default) {
         ThrowIfDisconnected();
         await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "client connection closed orderly", ct).Inv();
-        await _rxConsumer.Close().Inv();
         await _txConsumer.Close().Inv();
         await _txProducer.Close().Inv();
     }
 
     /// <inheritdoc cref="IDisposable" />
     public void Dispose() {
-        _rxConsumer.Dispose();
-        _rxProducer.Dispose();
         _txConsumer.Dispose();
         _txProducer.Dispose();
         _ws.Dispose();
@@ -93,7 +86,7 @@ public sealed class WsClient : IDisposable {
         }
         // send request
         var stream = await SerializeAsync(req, ct).Inv();
-        await _rxProducer.SendAsync(stream);
+        await _rx.SendAsync(stream, ct).Inv();
             // await response, dispose message when done
         using var response = await handler.Task.Inv();
         // validate header
