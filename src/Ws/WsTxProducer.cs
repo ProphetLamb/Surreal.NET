@@ -20,12 +20,14 @@ public sealed class WsTxProducer : IDisposable {
     private Task? _execute;
 
     private readonly int _blockSize;
+    private readonly int _messageSize;
 
-    public WsTxProducer(ClientWebSocket ws, ChannelWriter<WsMessageReader> @out, RecyclableMemoryStreamManager memoryManager, int blockSize) {
+    public WsTxProducer(ClientWebSocket ws, ChannelWriter<WsMessageReader> @out, RecyclableMemoryStreamManager memoryManager, int blockSize, int messageSize) {
         _ws = ws;
         _out = @out;
         _memoryManager = memoryManager;
         _blockSize = blockSize;
+        _messageSize = messageSize;
     }
 
     private async Task Execute(CancellationToken ct) {
@@ -45,7 +47,7 @@ public sealed class WsTxProducer : IDisposable {
         var result = await _ws.ReceiveAsync(buffer, ct).Inv();
         // create a new message with a RecyclableMemoryStream
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
-        WsMessageReader msg = new(new RecyclableMemoryStream(_memoryManager));
+        WsMessageReader msg = new(_memoryManager, _messageSize);
         // begin adding the message to the output
         await _out.WriteAsync(msg, ct).Inv();
 

@@ -34,9 +34,9 @@ public sealed class WsClient : IDisposable {
         options.ValidateAndMakeReadonly();
         _memoryManager = options.MemoryManager;
         _rx = new(_ws, _memoryManager.BlockSize);
-        var tx = Channel.CreateBounded<WsMessageReader>(options.ChannelTxMessagesMax);
+        var tx = Channel.CreateBounded<WsMessageReader>(options.TxChannelCapacity);
         _txConsumer = new(tx.Reader, options.ReceiveHeaderBytesMax, options.RequestExpiration, TimeSpan.FromSeconds(1));
-        _txProducer = new(_ws, tx.Writer, _memoryManager, _memoryManager.BlockSize);
+        _txProducer = new(_ws, tx.Writer, _memoryManager, _memoryManager.BlockSize, options.MessageChannelCapacity);
 
         _idBytes = options.IdBytes;
     }
