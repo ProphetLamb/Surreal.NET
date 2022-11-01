@@ -39,7 +39,7 @@ internal sealed class WsTxConsumer : IDisposable {
         // receive the first part of the message
         var result = await message.ReceiveAsync(ct).Inv();
         // throw if the result is a close ack
-        result.ThrowCancelIfClosed();
+        result.ThrowIfClose();
         // parse the header from the message
         WsHeader header = PeekHeader(message, result.Count);
 
