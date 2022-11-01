@@ -62,7 +62,7 @@ public readonly partial record struct DriverResponse {
 
         public bool MoveNext() {
             while (_en.MoveNext()) {
-                if (!_en.Current.TryGetError(out ErrorResult err)) {
+                if (!_en.Current.TryGetAnyError(out ErrorResult err)) {
                     continue;
                 }
 

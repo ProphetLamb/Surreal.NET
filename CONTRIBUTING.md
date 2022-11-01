@@ -2,7 +2,7 @@
 
 Contributions are always welcomed.
 
-Two steps you must follow to contribute to this repository:
+In order to contribute, a PR (pull request) must fulfill the requirements below:
 
 - Every Pull Request must have a title AND description.
 - Make sure you follow for Writing Commit messages and PR Titles

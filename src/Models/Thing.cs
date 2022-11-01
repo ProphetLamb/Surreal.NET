@@ -1,3 +1,5 @@
+using SurrealDB.Json;
+
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
@@ -13,131 +15,150 @@ namespace SurrealDB.Models;
 /// <remarks>
 ///     `table_name:record_id`
 /// </remarks>
-[JsonConverter(typeof(Converter))]
-[DebuggerDisplay("{Inner,nq}")]
+[JsonConverter(typeof(ThingConverter))]
+[DebuggerDisplay("{ToString(),nq}")]
 public readonly record struct Thing {
     public const char CHAR_SEP = ':';
     public const char CHAR_PRE = '⟨';
     public const char CHAR_SUF = '⟩';
 
     private readonly int _split;
+    private readonly string _inner;
 
-    public Thing(
-            int split,
-            string inner) {
-        _split = split;
-        Inner = inner;
+    public Thing(string thing) {
+        _split = thing.IndexOf(CHAR_SEP);
+
+        _inner = thing;
     }
 
-    /// <summary>
-    /// Returns the underlying string.
-    /// </summary>
-    public string Inner { get; }
+    public Thing(
+        string table,
+        string key) {
+        _split = table.Length;
 
+        _inner = $"{table}{CHAR_SEP}{EscapeComplexCharactersIfRequired(key)}";
+    }
+
+    public Thing(
+        string table,
+        object? key) {
+        _split = table.Length;
+
+        if (key == null) {
+            _inner = table;
+            return;
+        }
+        
+        string keyStr = JsonSerializer.Serialize(key, SerializerOptions.Shared);
+        if (keyStr[0] == '"' && keyStr[keyStr.Length - 1] == '"') {
+            // This key is being represented in JSON as a string (rather than a number, object or array)
+            // We need to strip off the double quotes and check if it needs to be escaped
+            keyStr = keyStr.Substring(1, keyStr.Length - 2);
+            keyStr = EscapeComplexCharactersIfRequired(keyStr);
+        }
+        
+        _inner = $"{table}{CHAR_SEP}{keyStr}";
+    }
+    
     /// <summary>
     /// Returns the Table part of the Thing
     /// </summary>
-    public ReadOnlySpan<char> Table => Inner.AsSpan(0, _split);
+    public ReadOnlySpan<char> Table => HasKey ? _inner.AsSpan(0, _split): _inner.AsSpan();
 
     /// <summary>
     /// Returns the Key part of the Thing.
     /// </summary>
-    public ReadOnlySpan<char> Key => GetKeyOffset(out int rec) ? Inner.AsSpan(rec) : default;
+    public ReadOnlySpan<char> Key => GetKeyOffset(out int rec) ? _inner.AsSpan(rec) : default;
 
     /// <summary>
     /// If the <see cref="Key"/> is present returns the <see cref="Table"/> part including the separator; otherwise returns the <see cref="Table"/>.
     /// </summary>
-    public ReadOnlySpan<char> TableAndSeparator => GetKeyOffset(out int rec) ? Inner.AsSpan(0, rec) : Inner;
+    public ReadOnlySpan<char> TableAndSeparator => GetKeyOffset(out int rec) ? _inner.AsSpan(0, rec) : _inner;
 
-    public bool HasKey => _split < Length;
+    public bool HasKey => _split >= 0;
 
-    public int Length => Inner.Length;
-
-    /// <summary>
-    /// Indicates whether the <see cref="Key"/> is escaped. true if no <see cref="Key"/> is present.
-    /// </summary>
-    public bool IsKeyEscaped => GetKeyOffset(out int rec) ? Inner[rec] == CHAR_PRE && Inner[Inner.Length - 1] == CHAR_SUF : true;
+    public int Length => _inner.Length;
 
     /// <summary>
-    /// Returns the unescaped key, if tne key is escaped
+    /// Indicates whether the <see cref="Key"/> is escaped. false if no <see cref="Key"/> is present.
     /// </summary>
-    public bool TryUnescapeKey(out ReadOnlySpan<char> key) {
+    public bool IsKeyEscaped => GetKeyOffset(out int rec) ? IsStringEscaped(Key) : false;
+
+    /// <summary>
+    /// Returns the unescaped key, if the key is escaped
+    /// </summary>
+    private bool TryUnescapeKey(out ReadOnlySpan<char> key) {
         if (!GetKeyOffset(out int off) || !IsKeyEscaped) {
             key = default;
             return false;
         }
 
         int escOff = off + 1;
-        key = Inner.AsSpan(escOff, Inner.Length - escOff - 1);
+        key = _inner.AsSpan(escOff, _inner.Length - escOff - 1);
         return true;
     }
 
-    /// <summary>
-    /// Escapes the <see cref="Thing"/> if not already <see cref="IsKeyEscaped"/>.
-    /// </summary>
-    /// <returns></returns>
-    [Pure, MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Thing Escape() {
-        return IsKeyEscaped ? this : new(_split, $"{TableAndSeparator.ToString()}{CHAR_PRE}{Key.ToString()}{CHAR_SUF}");
+    private static bool IsStringEscaped(in ReadOnlySpan<char> key) {
+        if (key.Length == 0) {
+            return false;
+        }
+
+        return key[0] == CHAR_PRE && key[key.Length - 1] == CHAR_SUF;
+    }
+    
+    private static string EscapeKey(in ReadOnlySpan<char> key) {
+        return $"{CHAR_PRE}{key.ToString()}{CHAR_SUF}";
     }
 
-    /// <summary>
-    /// Uneescapes the <see cref="Thing"/> if not already <see cref="IsKeyEscaped"/>.
-    /// </summary>
-    /// <returns></returns>
-    [Pure, MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Thing Unescape() {
-        return TryUnescapeKey(out ReadOnlySpan<char> key) ? new(_split, $"{TableAndSeparator.ToString()}{key.ToString()}") : this;
+    private static string EscapeComplexCharactersIfRequired(in ReadOnlySpan<char> key) {
+        if (!ContainsComplexCharacters(in key) || IsStringEscaped(key)) {
+            return key.ToString();
+        }
+
+        return EscapeKey(key);
     }
 
+    private static bool ContainsComplexCharacters(in ReadOnlySpan<char> key) {
+        for (int i = 0; i < key.Length; i++) {
+            char ch = key[i];
+            if (IsComplexCharacter(ch)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsComplexCharacter(char c) {
+        // A complex character is one that is not 0..9, a..Z or _
+        switch (c) {
+        case >= '0' and <= '9':
+        case >= 'a' and <= 'z':
+        case >= 'A' and <= 'Z':
+        case '_':
+            return false;
+        default:
+            return true;
+        }
+    }
+    
     [Pure]
-    private bool GetKeyOffset(out int off) {
-        off = _split + 1;
+    private bool GetKeyOffset(out int offset) {
+        offset = _split + 1;
         return HasKey;
     }
-
-    public static Thing From(string? thing) {
-        if (string.IsNullOrEmpty(thing)) {
+    
+    public static implicit operator Thing(in string? thing) {
+        if (thing == null) {
             return default;
         }
 
-        int split = thing.IndexOf(CHAR_SEP);
-        return new(split <= 0 ? thing.Length : split, thing);
-    }
-
-    public static Thing From(
-        in ReadOnlySpan<char> table,
-        in ReadOnlySpan<char> key) {
-        return From($"{table.ToString()}:{key.ToString()}");
-    }
-
-    public Thing WithTable(in ReadOnlySpan<char> table) {
-        int keyOffset = table.Length + 1;
-        int chars = keyOffset + Key.Length;
-        Span<char> builder = stackalloc char[chars];
-        table.CopyTo(builder);
-        builder[table.Length] = CHAR_SEP;
-        Key.CopyTo(builder.Slice(keyOffset));
-        return new(table.Length, builder.ToString());
-    }
-
-    public Thing WithKey(in ReadOnlySpan<char> key) {
-        int keyOffset = Table.Length + 1;
-        int chars = keyOffset + key.Length;
-        Span<char> builder = stackalloc char[chars];
-        Table.CopyTo(builder);
-        builder[Table.Length] = ':';
-        key.CopyTo(builder.Slice(keyOffset));
-        return new(Table.Length, builder.ToString());
-    }
-
-    public static implicit operator Thing(in string? thing) {
-        return From(thing);
+        return new Thing(thing);
     }
 
     // Double implicit operators can result in syntax problems, so we use the explicit operator instead.
     public static explicit operator string(in Thing thing) {
-        return thing.Inner;
+        return thing.ToString();
     }
 
     public string ToUri() {
@@ -151,7 +172,7 @@ public readonly record struct Thing {
             result.Append(Uri.EscapeDataString(Table.ToString()));
         }
 
-        if (Key.IsEmpty) {
+        if (!HasKey) {
             return result.ToString();
         }
 
@@ -168,65 +189,25 @@ public readonly record struct Thing {
     }
 
     public override string ToString() {
-        return (string)Converter.EscapeComplexCharactersIfRequired(in this);
+        return _inner;
     }
 
-    public sealed class Converter : JsonConverter<Thing> {
+    public sealed class ThingConverter : JsonConverter<Thing> {
         public override Thing Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-            return reader.GetString();
+            return new (reader.GetString());
         }
 
         public override Thing ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-            return reader.GetString();
+            return new (reader.GetString());
         }
 
         public override void Write(Utf8JsonWriter writer, Thing value, JsonSerializerOptions options) {
-            writer.WriteStringValue((string)EscapeComplexCharactersIfRequired(in value));
+            writer.WriteStringValue(value.ToString());
         }
 
         public override void WriteAsPropertyName(Utf8JsonWriter writer, Thing value, JsonSerializerOptions options) {
-            writer.WritePropertyName((string)EscapeComplexCharactersIfRequired(in value));
+            writer.WritePropertyName(value.ToString());
         }
 
-        internal static Thing EscapeComplexCharactersIfRequired(in Thing thing) {
-            if (!ContainsComplexCharacters(in thing)) {
-                return thing;
-            }
-
-            return thing.Escape();
-        }
-
-        internal static bool ContainsComplexCharacters(in Thing thing) {
-            if (thing.IsKeyEscaped || !thing.GetKeyOffset(out int rec)) {
-                // This Thing is not split
-                return false;
-            }
-            ReadOnlySpan<char> text = (string)thing;
-            int len = text.Length;
-
-            // HACK: Workaround for the Rest Create endpoint treating integers as strings
-            // REMOVE WHEN FIXED https://github.com/surrealdb/surrealdb/issues/1281
-            var allNumberChars = true;
-            for (int i = rec; i < len; i++) {
-                char ch = text[i];
-                if (char.IsLetter(ch) || ch == '_') {
-                    allNumberChars = false;
-                    break;
-                }
-            }
-            if (allNumberChars) {
-                return true;
-            }
-            // END HACK
-
-            for (int i = rec; i < len; i++) {
-                char ch = text[i];
-                if (!char.IsLetterOrDigit(ch) && ch != '_') {
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 }

@@ -49,6 +49,7 @@ public readonly record struct Patch {
     /// <summary>
     /// A JSON Patch document is just a JSON file containing an array of patch operations. The patch operations supported by JSON Patch are “add”, “remove”, “replace”, “move”, “copy” and “test”. The operations are applied in order: if any of them fail then the whole patch operation should abort.
     /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum Mode : byte {
         /// <summary>Adds a value to an object or inserts it into an array. In the case of an array, the value is inserted before the given index. The - character can be used instead of an index to insert at the end of an array.</summary>
         /// <example>`{ "op": "add", "path": "/biscuits/1", "value": { "name": "Ginger Nut" } }`</example>

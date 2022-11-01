@@ -9,7 +9,7 @@ public class RestEnumFlagQueryTests : EnumFlagQueryTests<DatabaseRest> {
     }
 }
 
-public abstract class EnumFlagQueryTests<T> : EqualityQueryTests<T, int, FlagsEnum>
+public abstract class EnumFlagQueryTests<T> : EqualityQueryTests<T, FlagsEnum, FlagsEnum>
     where T : IDatabase, IDisposable, new() {
 
 
@@ -32,7 +32,7 @@ public abstract class EnumFlagQueryTests<T> : EqualityQueryTests<T, int, FlagsEn
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomInt(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -44,16 +44,6 @@ public abstract class EnumFlagQueryTests<T> : EqualityQueryTests<T, int, FlagsEn
                 }
             }
         }
-    }
-
-    private static int RandomInt() {
-        return ThreadRng.Shared.Next();
-    }
-
-    private static FlagsEnum RandomEnum() {
-        var enumValues = EnumHelper.GetValues<FlagsEnum>();
-        var index = ThreadRng.Shared.Next(0, enumValues.Length);
-        return enumValues[index];
     }
 
     public EnumFlagQueryTests(ITestOutputHelper logger) : base(logger) {

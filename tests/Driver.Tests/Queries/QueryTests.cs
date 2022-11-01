@@ -19,7 +19,7 @@ public abstract class QueryTests<T, TKey, TValue>
         async db => {
             TestObject<TKey, TValue> expectedObject = new(key, value);
 
-            Thing thing = Thing.From("object", expectedObject.Key!.ToString());
+            Thing thing = new("object", expectedObject.Key!);
             var response = await db.Create(thing, expectedObject);
 
             ResultValue result = response.FirstValue();
@@ -34,7 +34,7 @@ public abstract class QueryTests<T, TKey, TValue>
         async db => {
             TestObject<TKey, TValue> expectedObject = new(key, value);
 
-            Thing thing = Thing.From("object", expectedObject.Key!.ToString());
+            Thing thing = new("object", expectedObject.Key!);
             await db.Create(thing, expectedObject);
             var response = await db.Select(thing);
 
@@ -51,7 +51,7 @@ public abstract class QueryTests<T, TKey, TValue>
         async db => {
             TestObject<TKey, TValue> expectedObject = new(key, value);
 
-            Thing thing = Thing.From("object", expectedObject.Key!.ToString());
+            Thing thing = new("object", expectedObject.Key!);
             await db.Create(thing, expectedObject);
             var deleteResponse = await db.Delete(thing);
 
@@ -71,7 +71,7 @@ public abstract class QueryTests<T, TKey, TValue>
         async db => {
             TestObject<TKey, TValue> expectedObject = new(key, default(TValue)!);
 
-            Thing thing = Thing.From("object", expectedObject.Key!.ToString());
+            Thing thing = new("object", expectedObject.Key!);
             await db.Create(thing, expectedObject);
             expectedObject.Value = value;
             var response = await db.Update(thing, expectedObject);
@@ -90,7 +90,7 @@ public abstract class QueryTests<T, TKey, TValue>
             TestObject<TKey, TValue> createdObject = new(key, default(TValue)!);
             ExtendedTestObject<TKey, TValue> expectedObject = new(key, value, value);
 
-            Thing thing = Thing.From("object", createdObject.Key!.ToString());
+            Thing thing = new("object", createdObject.Key!);
             await db.Create(thing, createdObject);
             await db.Modify(thing, new[]{
                 Patch.Replace("/Value", value!),
@@ -130,7 +130,7 @@ public abstract class QueryTests<T, TKey, TValue>
             TestObject<TKey, TValue> createdObject = new(key, default(TValue)!);
             ExtendedTestObject<TKey, TValue> expectedObject = new(key, value, value);
 
-            Thing thing = Thing.From("object", createdObject.Key!.ToString());
+            Thing thing = new("object", createdObject.Key!);
             await db.Create(thing, createdObject);
             var response = await db.Change(thing, new {  Value = value, MergeValue = value });
 
@@ -147,7 +147,7 @@ public abstract class QueryTests<T, TKey, TValue>
         async db => {
             TestObject<TKey, TValue> expectedObject = new(key, value);
 
-            Thing thing = Thing.From("object", expectedObject.Key!.ToString());
+            Thing thing = new("object", expectedObject.Key!);
             await db.Create(thing, expectedObject);
             string sql = "SELECT * FROM $thing";
             Dictionary<string, object?> param = new() { ["thing"] = thing, };
@@ -167,7 +167,7 @@ public abstract class QueryTests<T, TKey, TValue>
         async db => {
             TestObject<TKey, TValue> expectedObject = new(key, value);
 
-            Thing thing = Thing.From("object", expectedObject.Key!.ToString());
+            Thing thing = new("object", expectedObject.Key!);
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT * FROM object WHERE id = $thing";
@@ -189,7 +189,7 @@ public abstract class QueryTests<T, TKey, TValue>
             TestObject<TKey, TValue> expectedObject = new(key, value);
             Logger.WriteLine("exp: {0}", Serialize(expectedObject));
 
-            Thing thing = Thing.From("object", expectedObject.Key!.ToString());
+            Thing thing = new("object", expectedObject.Key!);
             await db.Create(thing, expectedObject);
 
             string sql = "SELECT * FROM object WHERE Value = $value";
@@ -212,10 +212,10 @@ public abstract class QueryTests<T, TKey, TValue>
         async db => {
             TestObject<TKey, TValue> expectedObject = new(key, value);
 
-            Thing thing1 = Thing.From("object1", expectedObject.Key!.ToString());
+            Thing thing1 = new("object1", expectedObject.Key!);
             await db.Create(thing1, expectedObject);
 
-            Thing thing2 = Thing.From("object2", expectedObject.Key!.ToString());
+            Thing thing2 = new("object2", expectedObject.Key!);
             await db.Create(thing2, expectedObject);
 
             var relateSql = "RELATE ($thing1)->hasOtherThing->($thing2)";

@@ -22,7 +22,7 @@ public abstract class DecimalQueryTests <T> : MathQueryTests<T, decimal, decimal
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomDouble(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -38,10 +38,6 @@ public abstract class DecimalQueryTests <T> : MathQueryTests<T, decimal, decimal
 
     protected override string ValueCast() {
         return "<float>";
-    }
-
-    private static decimal RandomDouble() {
-        return (decimal)ThreadRng.Shared.NextDouble();
     }
 
     protected override void AssertEquivalency(decimal a, decimal b) {

@@ -52,14 +52,14 @@ public abstract class DatabaseTestDriver<T>
 
             TestHelper.AssertOk(res2);
 
-            Thing thing2 = Thing.From("person", id2);
+            Thing thing2 = new("person", id2);
             TestHelper.AssertOk(await db.Update(thing2, new { Marketing = false, }));
 
             TestHelper.AssertOk(await db.Select(thing2));
 
             TestHelper.AssertOk(await db.Delete(thing2));
 
-            Thing thing1 = Thing.From("person", id1);
+            Thing thing1 = new("person", id1);
             TestHelper.AssertOk(
                 await db.Change(
                     thing1,
@@ -86,6 +86,8 @@ public abstract class DatabaseTestDriver<T>
             );
 
             TestHelper.AssertOk(queryResp);
+
+            await db.Close();
         }
     );
 }

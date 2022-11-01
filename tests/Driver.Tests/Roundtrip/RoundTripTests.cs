@@ -1,52 +1,93 @@
+using System.Collections;
+
+using SurrealDB.Json;
 using SurrealDB.Models.Result;
 
 namespace SurrealDB.Driver.Tests.Roundtrip;
 
 public class RpcRoundTripTests : RoundTripTests<DatabaseRpc> {
+    public RpcRoundTripTests(ITestOutputHelper logger) : base(logger) {
+    }
 }
 
 public class RestRoundTripTests : RoundTripTests<DatabaseRest> {
+    public RestRoundTripTests(ITestOutputHelper logger) : base(logger) {
+    }
 }
 
 [Collection("SurrealDBRequired")]
 public abstract class RoundTripTests<T>
     where T : IDatabase, IDisposable, new() {
 
+    protected readonly ITestOutputHelper Logger;
 
-    protected RoundTripObject Expected = new();
+    public RoundTripTests(ITestOutputHelper logger) {
+        Logger = logger;
+    }
 
-    [Fact]
-    public async Task CreateRoundTripTest() => await DbHandle<T>.WithDatabase(
+
+    private static IEnumerable<RoundTripObject> DocumentsToTest {
+        get {
+            yield return new RoundTripObject();
+
+            for (int i = 4; i < 9; i++) {
+                var arraySize = 2 << i;
+                var largeDocument = new RoundTripObject {
+                    StringArray = new string[arraySize],
+                };
+
+                for (int n = 0; n < largeDocument.StringArray.Length; n++) {
+                    largeDocument.StringArray[n] = TestHelper.RandomString(10);
+                }
+
+                yield return largeDocument;
+            }
+        }
+    }
+
+    public static List<object[]> Documents => DocumentsToTest.Select(e => new []{(object)e}).ToList();
+
+    [Theory]
+    [MemberData(nameof(Documents))]
+    public async Task CreateRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(
         async db => {
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
-            var response = await db.Create(thing, Expected);
+            Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
+
+            Thing thing = new("object", ThreadRng.Shared.Next());
+            var response = await db.Create(thing, document);
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
             var returnedDocument = result.GetObject<RoundTripObject>();
-            RoundTripObject.AssertAreEqual(Expected, returnedDocument);
+            RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
-
-    [Fact]
-    public async Task CreateAndSelectRoundTripTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData(nameof(Documents))]
+    public async Task CreateAndSelectRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(
         async db => {
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
-            await db.Create(thing, Expected);
+            Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
+
+            Thing thing = new("object", ThreadRng.Shared.Next());
+            await db.Create(thing, document);
             var response = await db.Select(thing);
 
             TestHelper.AssertOk(response);
             ResultValue result = response.FirstValue();
             var returnedDocument = result.GetObject<RoundTripObject>();
-            RoundTripObject.AssertAreEqual(Expected, returnedDocument);
+            RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
-
-    [Fact]
-    public async Task CreateAndQueryRoundTripTest() => await DbHandle<T>.WithDatabase(
+    
+    [Theory]
+    [MemberData(nameof(Documents))]
+    public async Task CreateAndQueryRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(
         async db => {
-            Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
-            await db.Create(thing, Expected);
+            Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
+
+            Thing thing = new("object", ThreadRng.Shared.Next());
+            await db.Create(thing, document);
             string sql = $"SELECT * FROM \"{thing}\"";
             var response = await db.Query(sql, null);
 
@@ -54,14 +95,17 @@ public abstract class RoundTripTests<T>
             TestHelper.AssertOk(response);
             response.TryGetFirstValue(out ResultValue result).Should().BeTrue();
             var returnedDocument = result.GetObject<RoundTripObject>();
-            RoundTripObject.AssertAreEqual(Expected, returnedDocument);
+            RoundTripObject.AssertAreEqual(document, returnedDocument);
         }
     );
+    
+    [Theory]
+    [MemberData(nameof(Documents))]
+    public async Task CreateAndParameterizedQueryRoundTripTest(RoundTripObject document) => await DbHandle<T>.WithDatabase(async db => {
+        Logger.WriteLine("Document size in bytes: {0}", JsonSerializer.Serialize(document, SerializerOptions.Shared).Length * sizeof(char));
 
-    [Fact]
-    public async Task CreateAndParameterizedQueryRoundTripTest() => await DbHandle<T>.WithDatabase(async db => {
-        Thing thing = Thing.From("object", ThreadRng.Shared.Next().ToString());
-        var rsp = await db.Create(thing, Expected);
+        Thing thing = new("object", ThreadRng.Shared.Next());
+        var rsp = await db.Create(thing, document);
         rsp.HasErrors.Should().BeFalse();
         string sql = "SELECT * FROM $thing";
         Dictionary<string, object?> param = new() { ["thing"] = thing, };
@@ -71,7 +115,7 @@ public abstract class RoundTripTests<T>
         TestHelper.AssertOk(response);
         ResultValue result = response.FirstValue();
         var returnedDocument = result.GetObject<RoundTripObject>();
-        RoundTripObject.AssertAreEqual(Expected, returnedDocument);
+        RoundTripObject.AssertAreEqual(document, returnedDocument);
     });
 }
 
@@ -177,8 +221,9 @@ public class RoundTripObject {
     public TestObject<int, int>? TestObject { get; set; } = new(-100, 1);
     public TestObject<int, int>? NullTestObject { get; set; } = null;
 
-    public int[] IntArray { get; set; } = new [] {-100, 1, 0, -1, 100};
+    public int[] IntArray { get; set; } = {-100, 1, 0, -1, 100};
     public int[]? NullIntArray { get; set; } = null;
+    public string[] StringArray { get; set; } = {"/", ":", "@", "[", "`", "{", "-", " ", "❤", "\n", "\"", "$", "£", "ह", "€", "한",/* "𐍈",*/ "Γ", "²", "¼", "௯", "௰", "༳", "➈", "‗", "⎁", "⎂", "a̱", "a̲", "a̲̲", "ʰ", "◌̲", "◌͝", "◌⃠", "a̷̢̘̩̣̩̹̝͔̹̝̎̄̒͊̄̈̋͐͋̀̕͠͝", "_", "0", "9", "a", "z", "A", "Z"};
 
     public TestObject<int, int>?[] TestObjectArray { get; set; } = new [] { new TestObject<int, int>(-100, 1), new TestObject<int, int>(0, -1), null };
     public TestObject<int, int>?[]? NullTestObjectArray { get; set; } = null;

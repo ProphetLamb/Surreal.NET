@@ -55,7 +55,7 @@ public abstract class ManagementQueryTests<T>
             TestObject<int, string> expectedOriginalObject = new(1, originalDbName);
             TestObject<int, string> expectedOtherObject = new(1, otherDbName);
 
-            Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
+            Thing thing = new("object", expectedOriginalObject.Key);
             await db.Create(thing, expectedOriginalObject);
 
             {
@@ -97,7 +97,7 @@ public abstract class ManagementQueryTests<T>
             TestObject<int, string> expectedOriginalObject = new(1, originalNsName);
             TestObject<int, string> expectedOtherObject = new(1, otherNsName);
 
-            Thing thing = Thing.From("object", expectedOriginalObject.Key.ToString());
+            Thing thing = new("object", expectedOriginalObject.Key);
             await db.Create(thing, expectedOriginalObject);
 
             {

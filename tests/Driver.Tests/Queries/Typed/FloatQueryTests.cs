@@ -22,7 +22,7 @@ public abstract class FloatQueryTests <T> : MathQueryTests<T, float, float>
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomFloat(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -38,10 +38,6 @@ public abstract class FloatQueryTests <T> : MathQueryTests<T, float, float>
 
     protected override string ValueCast() {
         return "<float>";
-    }
-
-    private static float RandomFloat() {
-        return ThreadRng.Shared.NextSingle();
     }
 
     protected override void AssertEquivalency(float a, float b) {

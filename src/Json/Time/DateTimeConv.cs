@@ -4,6 +4,9 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Superpower;
+using Superpower.Model;
+
 namespace SurrealDB.Json.Time;
 
 public sealed class DateTimeConv : JsonConverter<DateTime> {
@@ -31,21 +34,26 @@ public sealed class DateTimeConv : JsonConverter<DateTime> {
     }
 
     public static DateTime Parse(string? s) {
-        return DateTimeOffsetConv.Parse(s).DateTime;
+        return TryParse(s, out DateTime value) ? value : ThrowParseInvalid(s);
     }
 
     public static bool TryParse(string? s, out DateTime value) {
-        if (DateTimeOffsetConv.TryParse(s, out var v)) {
-            value = v.DateTime;
-            return true;
+        if (String.IsNullOrEmpty(s)) {
+            value = default;
+            return false;
         }
-
-        value = default;
-        return false;
+        Result<DateTime> res = TimeParsers.IsoDateTimeUtc(new TextSpan(s));
+        value = res.HasValue ? res.Value : default;
+        return res.HasValue;
     }
 
     public static string ToString(in DateTime value) {
         return value.ToString("O");
+    }
+
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
+    private static DateTime ThrowParseInvalid(string? s) {
+        throw new ParseException($"Unable to parse DateTime from `{s}`");
     }
 
 

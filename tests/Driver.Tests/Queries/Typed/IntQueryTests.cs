@@ -22,7 +22,7 @@ public abstract class IntQueryTests <T> : MathQueryTests<T, int, int>
 
     public static IEnumerable<object[]> KeyAndValuePairs {
         get {
-            return TestValues.Select(e => new object[] { RandomInt(), e });
+            return TestValues.Select(e => new object[] { e, e });
         }
     }
     
@@ -38,10 +38,6 @@ public abstract class IntQueryTests <T> : MathQueryTests<T, int, int>
 
     protected override string ValueCast() {
         return "<int>";
-    }
-
-    private static int RandomInt() {
-        return ThreadRng.Shared.Next();
     }
 
     protected override void AssertEquivalency(int a, int b) {

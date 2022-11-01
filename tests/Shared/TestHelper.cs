@@ -1,3 +1,5 @@
+using SurrealDB.Common;
+
 using DriverResponse = SurrealDB.Models.Result.DriverResponse;
 
 namespace SurrealDB.Shared.Tests;
@@ -53,10 +55,17 @@ public static class TestHelper {
             return;
         }
 
-        var errorResponses = rsp.Errors.ToList();
+        var errorResponses = rsp.Oks.ToList();
         var message = $"Expected Error, got {errorResponses.Count} OK responses in {caller}";
 
         Exception ex = new(message);
         throw ex;
     }
+
+    public static string RandomString(int length = 10) {
+        const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return new string(Enumerable.Repeat(chars, length)
+           .Select(s => s[ThreadRng.Shared.Next(s.Length)]).ToArray());
+    }
+
 }
