@@ -35,7 +35,7 @@ internal static class GCHelper {
 
     internal static MemoryPressure GetMemoryPressure()
     {
-#if NETCOREAPP3_0_OR_GREATER || NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
         const double HighPressureThreshold = .90;       // Percent of GC memory pressure threshold we consider "high"
         const double MediumPressureThreshold = .70;     // Percent of GC memory pressure threshold we consider "medium"
         GCMemoryInfo memoryInfo = GC.GetGCMemoryInfo();
