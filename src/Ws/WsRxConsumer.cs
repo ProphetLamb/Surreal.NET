@@ -51,8 +51,12 @@ public sealed class WsRxConsumer : IDisposable {
     public bool Connected => _cts is not null & _execute is not null;
 
     public void Open() {
+        ThrowIfConnected();
         lock (_lock) {
-            ThrowIfConnected();
+            if (Connected) {
+                return;
+            }
+
             _cts = new();
             _execute = Execute(_cts.Token);
         }
@@ -62,6 +66,10 @@ public sealed class WsRxConsumer : IDisposable {
         ThrowIfDisconnected();
         Task task;
         lock (_lock) {
+            if (!Connected) {
+                return;
+            }
+
             task = _execute;
             _cts.Cancel();
             _cts.Dispose(); // not relly needed here
@@ -90,7 +98,7 @@ public sealed class WsRxConsumer : IDisposable {
     }
 
     public void Dispose() {
+        _cts?.Cancel();
         _cts?.Dispose();
-        _cts = null;
     }
 }

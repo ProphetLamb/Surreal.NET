@@ -87,8 +87,11 @@ internal sealed class WsTxConsumer : IDisposable {
     }
 
     public void Open() {
+        ThrowIfConnected();
         lock (_lock) {
-            ThrowIfConnected();
+            if (Connected) {
+                return;
+            }
             _cts = new();
             _execute = Execute(_cts.Token);
         }
@@ -98,10 +101,13 @@ internal sealed class WsTxConsumer : IDisposable {
         ThrowIfDisconnected();
         Task task;
         lock (_lock) {
-            task = _execute;
+            if (!Connected) {
+                return;
+            }
             _cts.Cancel();
             _cts.Dispose(); // not relly needed here
             _cts = null;
+            task = _execute;
             _execute = null;
         }
 
@@ -126,7 +132,7 @@ internal sealed class WsTxConsumer : IDisposable {
     }
 
     public void Dispose() {
+        _cts?.Cancel();
         _cts?.Dispose();
-        _cts = null;
     }
 }

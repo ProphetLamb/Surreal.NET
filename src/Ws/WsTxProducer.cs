@@ -66,8 +66,11 @@ public sealed class WsTxProducer : IDisposable {
     public bool Connected => _cts is not null & _execute is not null;
 
     public void Open() {
+        ThrowIfConnected();
         lock (_lock) {
-            ThrowIfConnected();
+            if (Connected) {
+                return;
+            }
             _cts = new();
             _execute = Execute(_cts.Token);
         }
@@ -75,8 +78,11 @@ public sealed class WsTxProducer : IDisposable {
 
     public async Task Close() {
         Task task;
+        ThrowIfDisconnected();
         lock (_lock) {
-            ThrowIfDisconnected();
+            if (!Connected) {
+                return;
+            }
             task = _execute;
             _cts.Cancel();
             _cts.Dispose(); // not relly needed here
@@ -107,8 +113,8 @@ public sealed class WsTxProducer : IDisposable {
     }
 
     public void Dispose() {
+        _cts?.Cancel();
         _cts?.Dispose();
-        _cts = null;
         _out.TryComplete();
     }
 }
