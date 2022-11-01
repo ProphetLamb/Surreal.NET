@@ -89,10 +89,9 @@ public sealed class WsClient : IDisposable {
             return default;
         }
         // send request
-        await using (var stream = await SerializeAsync(req, ct).Inv()) {
-            await _rxProducer.SendAsync(stream);
-        }
-        // await response, dispose message when done
+        var stream = await SerializeAsync(req, ct).Inv();
+        await _rxProducer.SendAsync(stream);
+            // await response, dispose message when done
         using var response = await handler.Task.Inv();
         // validate header
         var responseHeader = response.Header.Response;
