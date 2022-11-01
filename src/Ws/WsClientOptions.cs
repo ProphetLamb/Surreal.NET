@@ -59,14 +59,14 @@ public sealed record WsClientOptions : ValidateReadonly {
             yield return (nameof(ChannelRxMessagesMax), "cannot be less then or equal to zero");
         }
         if (ChannelRxMessagesMax > MaxArraySize) {
-            yield return (nameof(ChannelRxMessagesMax), $"cannot be greater then {nameof(MaxArraySize)}");
+            yield return (nameof(ChannelRxMessagesMax), "cannot be greater then MaxArraySize");
         }
 
         if (ChannelTxMessagesMax <= 0) {
             yield return (nameof(ChannelTxMessagesMax), "cannot be less then or equal to zero");
         }
         if (ChannelTxMessagesMax > MaxArraySize) {
-            yield return (nameof(ChannelTxMessagesMax), $"cannot be greater then {nameof(MaxArraySize)}");
+            yield return (nameof(ChannelTxMessagesMax), "cannot be greater then MaxArraySize");
         }
 
         if (ReceiveHeaderBytesMax <= 0) {
@@ -74,7 +74,7 @@ public sealed record WsClientOptions : ValidateReadonly {
         }
 
         if (ReceiveHeaderBytesMax > (_memoryManager?.BlockSize ?? 0)) {
-            yield return (nameof(ReceiveHeaderBytesMax), $"cannot be greater then {nameof(MemoryManager)}.{nameof(MemoryManager.BlockSize)}");
+            yield return (nameof(ReceiveHeaderBytesMax), "cannot be greater then MemoryManager.BlockSize");
         }
 
         if (_memoryManager is null) {
