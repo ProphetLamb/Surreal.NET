@@ -18,7 +18,7 @@ public sealed class WsMessageReader : Stream {
         _endOfMessage = 0;
     }
 
-    public bool IsEndOfMessage => Interlocked.Add(ref _endOfMessage, 0) == 1;
+    public bool HasReceivedEndOfMessage => Interlocked.Add(ref _endOfMessage, 0) == 1;
 
     protected override void Dispose(bool disposing) {
         if (!disposing) {
@@ -41,13 +41,15 @@ public sealed class WsMessageReader : Stream {
     }
 
     public WebSocketReceiveResult Receive(CancellationToken ct) {
-        return ReceiveAsync(ct).Inv().GetAwaiter().GetResult();
+        return ReceiveAsync(ct).Result;
     }
 
-    internal ValueTask WriteResultAsync(ReadOnlyMemory<byte> buffer, WebSocketReceiveResult result, CancellationToken ct) {
+    internal ValueTask AppendResultAsync(ReadOnlyMemory<byte> buffer, WebSocketReceiveResult result, CancellationToken ct) {
         ReadOnlySpan<byte> span = buffer.Span.Slice(0, result.Count);
         lock (_stream) {
+            var pos = _stream.Position;
             _stream.Write(span);
+            _stream.Position = pos;
         }
 
         return SetReceivedAsync(result, ct);
@@ -96,6 +98,10 @@ public sealed class WsMessageReader : Stream {
             read = _stream.Read(buffer);
         }
 
+        if (read == buffer.Length || HasReceivedEndOfMessage) {
+            return read;
+        }
+
         while (true) {
             var result = Receive(ct);
             int inc;
@@ -130,7 +136,7 @@ public sealed class WsMessageReader : Stream {
             read = _stream.Read(buffer.Span);
         }
 
-        if (read == buffer.Length || IsEndOfMessage) {
+        if (read == buffer.Length || HasReceivedEndOfMessage) {
             return new(read);
         }
 

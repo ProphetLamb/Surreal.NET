@@ -31,7 +31,6 @@ public struct WsTxProducer : IDisposable {
     private async Task Execute(CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
-            ThrowIfDisconnected();
             var buffer = ArrayPool<byte>.Shared.Rent(_blockSize);
             try {
                 await Produce(ct, buffer).Inv();
@@ -51,12 +50,12 @@ public struct WsTxProducer : IDisposable {
         // begin adding the message to the output
         await _out.WriteAsync(msg, ct).Inv();
 
-        await msg.WriteResultAsync(buffer, result, ct).Inv();
+        await msg.AppendResultAsync(buffer, result, ct).Inv();
 
         while (!result.EndOfMessage && !ct.IsCancellationRequested) {
             // receive more parts
             result = await _ws.ReceiveAsync(buffer, ct).Inv();
-            await msg.WriteResultAsync(buffer, result, ct).Inv();
+            await msg.AppendResultAsync(buffer, result, ct).Inv();
 
             ct.ThrowIfCancellationRequested();
         }
@@ -81,8 +80,10 @@ public struct WsTxProducer : IDisposable {
         Task task;
         lock (_lock) {
             ThrowIfDisconnected();
-            _cts.Cancel();
             task = _execute;
+            _cts.Cancel();
+            _cts.Dispose(); // not relly needed here
+            _cts = null;
             _execute = null;
         }
         return task;

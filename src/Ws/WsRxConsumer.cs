@@ -26,7 +26,6 @@ public struct WsRxConsumer : IDisposable {
     private async Task Execute(CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
-            ThrowIfDisconnected();
             await Consume(ct).Inv();
             ct.ThrowIfCancellationRequested();
         }
@@ -64,8 +63,10 @@ public struct WsRxConsumer : IDisposable {
         Task task;
         lock (_lock) {
             ThrowIfDisconnected();
-            _cts.Cancel();
             task = _execute;
+            _cts.Cancel();
+            _cts.Dispose(); // not relly needed here
+            _cts = null;
             _execute = null;
         }
         return task;

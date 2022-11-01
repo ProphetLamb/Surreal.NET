@@ -29,7 +29,6 @@ internal struct WsTxConsumer : IDisposable {
         Debug.Assert(ct.CanBeCanceled);
 
         while (!ct.IsCancellationRequested) {
-            ThrowIfDisconnected();
             await Consume(ct).Inv();
 
             ct.ThrowIfCancellationRequested();
@@ -98,8 +97,10 @@ internal struct WsTxConsumer : IDisposable {
         Task task;
         lock (_lock) {
             ThrowIfDisconnected();
-            _cts.Cancel();
             task = _execute;
+            _cts.Cancel();
+            _cts.Dispose(); // not relly needed here
+            _cts = null;
             _execute = null;
         }
         await task.Inv();
