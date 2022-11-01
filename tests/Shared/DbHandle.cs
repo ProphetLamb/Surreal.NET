@@ -38,7 +38,7 @@ public class DbHandle<T> : IAsyncDisposable
     }
 
     private async Task DisposeActualAsync(Process p) {
-        await Database.Close().Inv();
+        //await Database.Close().Inv();
         Database.Dispose();
         p.Kill();
     }
