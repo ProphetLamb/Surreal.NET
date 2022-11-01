@@ -93,11 +93,6 @@ public struct BufferStreamReader : IDisposable {
 
 
     public void Dispose() {
-        _arbitraryStream?.Dispose();
-        _arbitraryStream = null;
-        _memoryStream?.Dispose();
-        _memoryStream = null;
-
         var poolArray = _poolArray;
         _poolArray = null;
         if (poolArray is not null) {

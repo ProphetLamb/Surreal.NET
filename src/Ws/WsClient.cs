@@ -87,7 +87,7 @@ public sealed class WsClient : IDisposable {
         // send request
         var stream = await SerializeAsync(req, ct).Inv();
         await _rx.SendAsync(stream, ct).Inv();
-            // await response, dispose message when done
+        // await response, dispose message when done
         using var response = await handler.Task.Inv();
         // validate header
         var responseHeader = response.Header.Response;
