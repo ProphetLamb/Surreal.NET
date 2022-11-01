@@ -14,7 +14,7 @@ public readonly struct WsRxProducer : IDisposable {
     }
 
     public async Task SendAsync(Stream stream) {
-        // reader is disposed by the consumber
+        // reader is disposed by the consumer
         BufferStreamReader reader = new(stream, _bufferSize);
         await _channel.WriteAsync(reader);
     }
