@@ -30,34 +30,39 @@ internal struct WsTxConsumer : IDisposable {
 
         while (!ct.IsCancellationRequested) {
             ThrowIfDisconnected();
-            var message = await _in.ReadAsync(ct).Inv();
+            await Consume(ct).Inv();
 
-            // receive the first part of the message
-            var result = await message.ReceiveAsync(ct).Inv();
-            // parse the header from the message
-            WsHeader header = PeekHeader(message, result.Count);
-
-                // find the handler
-                string? id = header.Id;
-            if (id is null || !_handlers.TryGetValue(id, out var handler)) {
-                // invalid format, or no registered -> discard message
-                await message.DisposeAsync().Inv();
-                return;
-            }
-
-            // dispatch the message to the handler
-            try {
-                handler.Dispatch(new(header, message));
-            } catch (OperationCanceledException) {
-                // handler is canceled -> unregister
-                Unregister(handler.Id);
-            }
-
-            if (!handler.Persistent) {
-                // handler is only used once -> unregister
-                Unregister(handler.Id);
-            }
             ct.ThrowIfCancellationRequested();
+        }
+    }
+
+    private async Task Consume(CancellationToken ct) {
+        var message = await _in.ReadAsync(ct).Inv();
+
+        // receive the first part of the message
+        var result = await message.ReceiveAsync(ct).Inv();
+        // parse the header from the message
+        WsHeader header = PeekHeader(message, result.Count);
+
+        // find the handler
+        string? id = header.Id;
+        if (id is null || !_handlers.TryGetValue(id, out var handler)) {
+            // invalid format, or no registered -> discard message
+            await message.DisposeAsync().Inv();
+            return;
+        }
+
+        // dispatch the message to the handler
+        try {
+            handler.Dispatch(new(header, message));
+        } catch (OperationCanceledException) {
+            // handler is canceled -> unregister
+            Unregister(handler.Id);
+        }
+
+        if (!handler.Persistent) {
+            // handler is only used once -> unregister
+            Unregister(handler.Id);
         }
     }
 

@@ -26,22 +26,26 @@ public struct WsRxConsumer : IDisposable {
     private async Task Execute(CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
-            using var reader = await _in.ReadAsync(ct).Inv();
-
-            bool isFinalBlock = false;
-            while (!isFinalBlock && !ct.IsCancellationRequested) {
-                var rom = await reader.ReadAsync(_blockSize, ct).Inv();
-                isFinalBlock = rom.Length != _blockSize;
-                await _ws.SendAsync(rom, WebSocketMessageType.Text, isFinalBlock, ct).Inv();
-            }
-
-            if (!isFinalBlock) {
-                // ensure that the message is always terminated
-                // no not pass a CancellationToken
-                await _ws.SendAsync(default, WebSocketMessageType.Text, true, default).Inv();
-            }
-
+            ThrowIfDisconnected();
+            await Consume(ct).Inv();
             ct.ThrowIfCancellationRequested();
+        }
+    }
+
+    private async Task Consume(CancellationToken ct) {
+        using var reader = await _in.ReadAsync(ct).Inv();
+
+        bool isFinalBlock = false;
+        while (!isFinalBlock && !ct.IsCancellationRequested) {
+            var rom = await reader.ReadAsync(_blockSize, ct).Inv();
+            isFinalBlock = rom.Length != _blockSize;
+            await _ws.SendAsync(rom, WebSocketMessageType.Text, isFinalBlock, ct).Inv();
+        }
+
+        if (!isFinalBlock) {
+            // ensure that the message is always terminated
+            // no not pass a CancellationToken
+            await _ws.SendAsync(default, WebSocketMessageType.Text, true, default).Inv();
         }
     }
 

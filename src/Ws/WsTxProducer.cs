@@ -31,9 +31,10 @@ public struct WsTxProducer : IDisposable {
     private async Task Execute(CancellationToken ct) {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
+            ThrowIfDisconnected();
             var buffer = ArrayPool<byte>.Shared.Rent(_blockSize);
             try {
-                await ReceiveMessage(ct, buffer).Inv();
+                await Produce(ct, buffer).Inv();
             } finally {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
@@ -41,27 +42,27 @@ public struct WsTxProducer : IDisposable {
         }
     }
 
-    private async Task ReceiveMessage(CancellationToken ct, byte[] buffer) {
+    private async Task Produce(CancellationToken ct, byte[] buffer) {
         // receive the first part
         var result = await _ws.ReceiveAsync(buffer, ct).Inv();
         // create a new message with a RecyclableMemoryStream
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
         WsMessageReader msg = new(new RecyclableMemoryStream(_memoryManager));
         // begin adding the message to the output
-        var writeOutput = _out.WriteAsync(msg, ct);
+        await _out.WriteAsync(msg, ct).Inv();
 
         await msg.WriteResultAsync(buffer, result, ct).Inv();
 
         while (!result.EndOfMessage && !ct.IsCancellationRequested) {
             // receive more parts
             result = await _ws.ReceiveAsync(buffer, ct).Inv();
-            msg.WriteResultAsync(buffer, result, ct).Inv();
+            await msg.WriteResultAsync(buffer, result, ct).Inv();
 
             ct.ThrowIfCancellationRequested();
         }
 
         // finish adding the message to the output
-        await writeOutput.Inv();
+        //await writeOutput;
     }
 
 

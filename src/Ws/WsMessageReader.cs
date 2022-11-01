@@ -25,9 +25,8 @@ public sealed class WsMessageReader : Stream {
             return;
         }
 
-        lock (_stream) {
-            _stream.Dispose();
-        }
+        Interlocked.MemoryBarrierProcessWide();
+        _stream.Dispose();
     }
 
     private async ValueTask SetReceivedAsync(WebSocketReceiveResult result, CancellationToken ct) {
@@ -54,7 +53,7 @@ public sealed class WsMessageReader : Stream {
         return SetReceivedAsync(result, ct);
     }
 
-#region Stream member
+#region Stream members
 
     public override bool CanRead => true;
     public override bool CanSeek => true;
