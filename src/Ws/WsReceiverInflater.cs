@@ -40,25 +40,38 @@ public sealed class WsReceiverInflater : IDisposable {
     }
 
     private async Task Produce(byte[] buffer, CancellationToken ct) {
+        var log = WsReceiverInflaterEventSource.Log;
+
+        // log that we are waiting for the socket
+        log.SocketWaiting();
         // receive the first part
         var result = await _socket.ReceiveAsync(buffer, ct).Inv();
+        // log that we have received a message from the socket
+        log.SockedReceived(result);
+
         ct.ThrowIfCancellationRequested();
         // create a new message with a RecyclableMemoryStream
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
         WsReceiverMessageReader msg = new(_memoryManager, _messageSize);
         // begin adding the message to the output
-        var writeOutput = _channel.WriteAsync(msg, ct);
+        var push = _channel.WriteAsync(msg, ct);
 
         await msg.AppendResultAsync(buffer, result, ct).Inv();
 
         while (!result.EndOfMessage && !ct.IsCancellationRequested) {
             // receive more parts
             result = await _socket.ReceiveAsync(buffer, ct).Inv();
+            // log that we have received a message from the socket
+            log.SockedReceived(result);
             await msg.AppendResultAsync(buffer, result, ct).Inv();
         }
 
+        // log that we have completely received the message
+        log.MessageReceiveFinished();
         // finish adding the message to the output
-        await writeOutput.Inv();
+        await push.Inv();
+        // log that the message has been pushed to the channel
+        log.MessagePushed();
     }
 
 
@@ -66,18 +79,26 @@ public sealed class WsReceiverInflater : IDisposable {
     public bool Connected => _cts is not null & _execute is not null;
 
     public void Open() {
+        var log = WsReceiverInflaterEventSource.Log;
+
         ThrowIfConnected();
         _cts = new();
         _execute = Execute(_cts.Token);
+
+        log.Opened();
     }
 
     public async Task CloseAsync() {
+        var log = WsReceiverInflaterEventSource.Log;
+
         ThrowIfDisconnected();
         var task = _execute;
         _cts.Cancel();
         _cts.Dispose(); // not relly needed here
         _cts = null;
         _execute = null;
+
+        log.CloseBegin();
 
         try {
             await task.Inv();
@@ -86,6 +107,8 @@ public sealed class WsReceiverInflater : IDisposable {
         } catch (WebSocketException) {
             // expected on abort
         }
+
+        log.CloseFinish();
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]
@@ -102,8 +125,12 @@ public sealed class WsReceiverInflater : IDisposable {
     }
 
     public void Dispose() {
+        var log = WsReceiverInflaterEventSource.Log;
+
         _cts?.Cancel();
         _cts?.Dispose();
         _channel.TryComplete();
+
+        log.Disposed();
     }
 }
