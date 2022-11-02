@@ -49,7 +49,7 @@ public sealed class WsTxProducer : IDisposable {
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
         WsMessageReader msg = new(_memoryManager, _messageSize);
         // begin adding the message to the output
-        await _out.WriteAsync(msg, ct).Inv();
+        var writeOutput = _out.WriteAsync(msg, ct);
 
         await msg.AppendResultAsync(buffer, result, ct).Inv();
 
@@ -60,7 +60,7 @@ public sealed class WsTxProducer : IDisposable {
         }
 
         // finish adding the message to the output
-        //await writeOutput;
+        await writeOutput.Inv();
     }
 
 
