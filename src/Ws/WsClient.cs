@@ -20,9 +20,9 @@ public sealed class WsClient : IDisposable {
 
     private readonly ClientWebSocket _ws = new();
     private readonly RecyclableMemoryStreamManager _memoryManager;
-    private readonly WsRx _rx;
-    private readonly WsTxConsumer _txConsumer;
-    private readonly WsTxProducer _txProducer;
+    private readonly WsTransmitter _transmitter;
+    private readonly WsReceiverDeflater _deflater;
+    private readonly WsReceiverInflater _inflater;
 
     private readonly int _idBytes;
 
@@ -33,10 +33,10 @@ public sealed class WsClient : IDisposable {
     public WsClient(WsClientOptions options) {
         options.ValidateAndMakeReadonly();
         _memoryManager = options.MemoryManager;
-        _rx = new(_ws, _memoryManager.BlockSize);
-        var tx = Channel.CreateBounded<WsMessageReader>(options.TxChannelCapacity);
-        _txConsumer = new(tx.Reader, options.ReceiveHeaderBytesMax, options.RequestExpiration, TimeSpan.FromSeconds(1));
-        _txProducer = new(_ws, tx.Writer, _memoryManager, _memoryManager.BlockSize, options.MessageChannelCapacity);
+        _transmitter = new(_ws, _memoryManager.BlockSize);
+        var tx = Channel.CreateBounded<WsReceiverMessageReader>(options.TxChannelCapacity);
+        _deflater = new(tx.Reader, options.ReceiveHeaderBytesMax, options.RequestExpiration, TimeSpan.FromSeconds(1));
+        _inflater = new(_ws, tx.Writer, _memoryManager, _memoryManager.BlockSize, options.MessageChannelCapacity);
 
         _idBytes = options.IdBytes;
     }
@@ -50,8 +50,8 @@ public sealed class WsClient : IDisposable {
     public async Task OpenAsync(Uri url, CancellationToken ct = default) {
         ThrowIfConnected();
         await _ws.ConnectAsync(url, ct).Inv();
-        _txConsumer.Open();
-        _txProducer.Open();
+        _deflater.Open();
+        _inflater.Open();
     }
 
     /// <summary>
@@ -60,14 +60,14 @@ public sealed class WsClient : IDisposable {
     public async Task CloseAsync(CancellationToken ct = default) {
         ThrowIfDisconnected();
         await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "client connection closed orderly", ct).Inv();
-        await _txConsumer.Close().Inv();
-        await _txProducer.Close().Inv();
+        await _deflater.Close().Inv();
+        await _inflater.Close().Inv();
     }
 
     /// <inheritdoc cref="IDisposable" />
     public void Dispose() {
-        _txConsumer.Dispose();
-        _txProducer.Dispose();
+        _deflater.Dispose();
+        _inflater.Dispose();
         _ws.Dispose();
     }
 
@@ -81,12 +81,12 @@ public sealed class WsClient : IDisposable {
 
         // listen for the response
         ResponseHandler handler = new(req.id, ct);
-        if (!_txConsumer.RegisterOrGet(handler)) {
+        if (!_deflater.RegisterOrGet(handler)) {
             return default;
         }
         // send request
         var stream = await SerializeAsync(req, ct).Inv();
-        await _rx.SendAsync(stream, ct).Inv();
+        await _transmitter.SendAsync(stream, ct).Inv();
         // await response, dispose message when done
         using var response = await handler.Task.Inv();
         // validate header

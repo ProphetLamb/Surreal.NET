@@ -17,7 +17,7 @@ public sealed record WsClientOptions : ValidateReadonly {
 
     /// <summary>The maximum number of pending blocks in a single message channel. Default 64</summary>
     /// <remarks>The number of blocks of a message that can be received by the client, before they are consumed,
-    /// by reading from the <see cref="WsMessageReader"/>.
+    /// by reading from the <see cref="WsReceiverMessageReader"/>.
     /// A block have up to <see cref="RecyclableMemoryStreamManager.BlockSize"/> bytes.</remarks>
     public int MessageChannelCapacity {
         get => _messageChannelCapacity;

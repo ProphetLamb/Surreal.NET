@@ -8,11 +8,11 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Sends messages from a channel to a websocket server.</summary>
-public sealed class WsRx {
+public sealed class WsTransmitter {
     private readonly ClientWebSocket _ws;
     private readonly int _blockSize;
 
-    public WsRx(ClientWebSocket ws, int blockSize) {
+    public WsTransmitter(ClientWebSocket ws, int blockSize) {
         _ws = ws;
         _blockSize = blockSize;
     }

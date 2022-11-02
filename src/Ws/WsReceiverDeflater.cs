@@ -8,15 +8,15 @@ using SurrealDB.Common;
 
 namespace SurrealDB.Ws;
 
-/// <summary>Listens for <see cref="WsMessageReader"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
-internal sealed class WsTxConsumer : IDisposable {
-    private readonly ChannelReader<WsMessageReader> _in;
+/// <summary>Listens for <see cref="WsReceiverMessageReader"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
+internal sealed class WsReceiverDeflater : IDisposable {
+    private readonly ChannelReader<WsReceiverMessageReader> _in;
     private readonly DisposingCache<string, IHandler> _handlers;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
-    public WsTxConsumer(ChannelReader<WsMessageReader> channel, int maxHeaderBytes, TimeSpan cacheSlidingExpiration, TimeSpan cacheEvictionInterval) {
+    public WsReceiverDeflater(ChannelReader<WsReceiverMessageReader> channel, int maxHeaderBytes, TimeSpan cacheSlidingExpiration, TimeSpan cacheEvictionInterval) {
         _in = channel;
         MaxHeaderBytes = maxHeaderBytes;
         _handlers = new(cacheSlidingExpiration, cacheEvictionInterval);
@@ -32,6 +32,7 @@ internal sealed class WsTxConsumer : IDisposable {
 
         while (!ct.IsCancellationRequested) {
             await Consume(ct).Inv();
+            ct.ThrowIfCancellationRequested();
         }
     }
 
@@ -47,6 +48,7 @@ internal sealed class WsTxConsumer : IDisposable {
         // the header is a sum-type of all possible headers.
         var header = HeaderHelper.Parse(bytes.AsSpan(0, read));
         ArrayPool<byte>.Shared.Return(bytes);
+        ct.ThrowIfCancellationRequested();
 
         // find the handler
         string? id = header.Id;

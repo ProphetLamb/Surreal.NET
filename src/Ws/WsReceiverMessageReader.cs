@@ -11,12 +11,12 @@ using SurrealDB.Common;
 
 namespace SurrealDB.Ws;
 
-public sealed class WsMessageReader : Stream {
+public sealed class WsReceiverMessageReader : Stream {
     private readonly BoundedChannel<WebSocketReceiveResult> _channel;
     private readonly RecyclableMemoryStream _stream;
     private int _endOfMessage;
 
-    internal WsMessageReader(RecyclableMemoryStreamManager memoryManager, int channelCapacity) {
+    internal WsReceiverMessageReader(RecyclableMemoryStreamManager memoryManager, int channelCapacity) {
         _stream = new(memoryManager);
         _channel = BoundedChannelPool<WebSocketReceiveResult>.Shared.Rent(channelCapacity);
         _endOfMessage = 0;
@@ -57,6 +57,7 @@ public sealed class WsMessageReader : Stream {
             _stream.Write(span);
             _stream.Position = pos;
         }
+        ct.ThrowIfCancellationRequested();
 
         return SetReceivedAsync(result, ct);
     }
@@ -103,6 +104,7 @@ public sealed class WsMessageReader : Stream {
             // attempt to read from present buffer
             read = _stream.Read(buffer);
         }
+        ct.ThrowIfCancellationRequested();
 
         if (read == buffer.Length || HasReceivedEndOfMessage) {
             return read;
@@ -114,6 +116,7 @@ public sealed class WsMessageReader : Stream {
             lock (_stream) {
                 inc = _stream.Read(buffer.Slice(read));
             }
+            ct.ThrowIfCancellationRequested();
 
             Debug.Assert(inc == result.Count);
             read += inc;
@@ -141,6 +144,7 @@ public sealed class WsMessageReader : Stream {
             // attempt to read from present buffer
             read = _stream.Read(buffer.Span);
         }
+        ct.ThrowIfCancellationRequested();
 
         if (read == buffer.Length || HasReceivedEndOfMessage) {
             return new(read);
@@ -156,6 +160,8 @@ public sealed class WsMessageReader : Stream {
             lock (_stream) {
                 inc = _stream.Read(buffer.Span.Slice(read));
             }
+            ct.ThrowIfCancellationRequested();
+
             Debug.Assert(inc == result.Count);
             read += inc;
 

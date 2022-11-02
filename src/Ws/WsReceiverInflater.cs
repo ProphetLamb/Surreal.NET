@@ -11,9 +11,9 @@ using SurrealDB.Common;
 namespace SurrealDB.Ws;
 
 /// <summary>Receives messages from a websocket server and passes them to a channel</summary>
-public sealed class WsTxProducer : IDisposable {
+public sealed class WsReceiverInflater : IDisposable {
     private readonly ClientWebSocket _ws;
-    private readonly ChannelWriter<WsMessageReader> _out;
+    private readonly ChannelWriter<WsReceiverMessageReader> _out;
     private readonly RecyclableMemoryStreamManager _memoryManager;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
@@ -22,7 +22,7 @@ public sealed class WsTxProducer : IDisposable {
     private readonly int _blockSize;
     private readonly int _messageSize;
 
-    public WsTxProducer(ClientWebSocket ws, ChannelWriter<WsMessageReader> @out, RecyclableMemoryStreamManager memoryManager, int blockSize, int messageSize) {
+    public WsReceiverInflater(ClientWebSocket ws, ChannelWriter<WsReceiverMessageReader> @out, RecyclableMemoryStreamManager memoryManager, int blockSize, int messageSize) {
         _ws = ws;
         _out = @out;
         _memoryManager = memoryManager;
@@ -34,11 +34,8 @@ public sealed class WsTxProducer : IDisposable {
         Debug.Assert(ct.CanBeCanceled);
         while (!ct.IsCancellationRequested) {
             var buffer = ArrayPool<byte>.Shared.Rent(_blockSize);
-            try {
-                await Produce(buffer, ct).Inv();
-            } finally {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
+            await Produce(buffer, ct).Inv();
+            ct.ThrowIfCancellationRequested();
         }
     }
 
@@ -47,7 +44,7 @@ public sealed class WsTxProducer : IDisposable {
         var result = await _ws.ReceiveAsync(buffer, ct).Inv();
         // create a new message with a RecyclableMemoryStream
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
-        WsMessageReader msg = new(_memoryManager, _messageSize);
+        WsReceiverMessageReader msg = new(_memoryManager, _messageSize);
         // begin adding the message to the output
         var writeOutput = _out.WriteAsync(msg, ct);
 
@@ -79,13 +76,12 @@ public sealed class WsTxProducer : IDisposable {
     }
 
     public async Task Close() {
-        Task task;
         ThrowIfDisconnected();
+        Task task = _execute;
         lock (_lock) {
             if (!Connected) {
                 return;
             }
-            task = _execute;
             _cts.Cancel();
             _cts.Dispose(); // not relly needed here
             _cts = null;
@@ -97,7 +93,7 @@ public sealed class WsTxProducer : IDisposable {
         } catch (OperationCanceledException) {
             // expected on close using cts
         } catch (WebSocketException) {
-            // expected when the socket is closed before the receiver
+            // expected on abort
         }
     }
 
