@@ -43,7 +43,8 @@ internal sealed class WsTxConsumer : IDisposable {
         int read = await message.ReadAsync(bytes, ct).Inv();
         // peek instead of reading
         message.Position = 0;
-        Debug.Assert(read == bytes.Length);
+        // parse the header portion of the stream, without reading the `result` property.
+        // the header is a sum-type of all possible headers.
         var header = HeaderHelper.Parse(bytes);
         ArrayPool<byte>.Shared.Return(bytes);
 
