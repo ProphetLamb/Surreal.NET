@@ -25,7 +25,7 @@ public static class HeaderHelper {
             return new(default, nty, (int)ntyOff);
         }
 
-        throw new JsonException($"Failed to parse RspHeader or NotifyHeader: {rspErr} \n--AND--\n {ntyErr}", null, 0, Math.Max(rspOff, ntyOff));
+        return default;
     }
 }
 
