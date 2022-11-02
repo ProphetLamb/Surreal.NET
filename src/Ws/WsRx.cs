@@ -34,8 +34,7 @@ public sealed class WsRx {
 
         if (!isFinalBlock) {
             // ensure that the message is always terminated
-            // no not pass a CancellationToken
-            await _ws.SendAsync(default, WebSocketMessageType.Text, true, default).Inv();
+            await _ws.SendAsync(default, WebSocketMessageType.Text, true, ct).Inv();
         }
     }
 }
