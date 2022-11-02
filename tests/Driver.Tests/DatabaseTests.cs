@@ -85,8 +85,6 @@ public abstract class DatabaseTestDriver<T>
             );
 
             TestHelper.AssertOk(queryResp);
-
-            await db.Close();
         }
     );
 }
