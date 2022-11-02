@@ -1,4 +1,7 @@
+using System.Diagnostics.Tracing;
+
 using SurrealDB.Abstractions;
+using SurrealDB.Ws;
 
 namespace SurrealDB.Shared.Tests;
 
@@ -20,7 +23,13 @@ public class DbHandle<T> : IDisposable
 
     [DebuggerStepThrough]
     public static async Task WithDatabase(Func<T, Task> action) {
+        // enable console logging for events
+        using ConsoleOutEventListener l = new();
+        l.EnableEvents(WsReceiverInflaterEventSource.Log, EventLevel.LogAlways);
+        l.EnableEvents(WsReceiverDeflaterEventSource.Log, EventLevel.LogAlways);
+        // connect to the database
         using DbHandle<T> db = await Create();
+        // execute test methods
         await action(db.Database);
     }
 
