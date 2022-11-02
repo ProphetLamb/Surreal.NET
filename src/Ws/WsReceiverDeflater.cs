@@ -15,14 +15,13 @@ internal sealed class WsReceiverDeflater : IDisposable {
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
+    private readonly int _maxHeaderBytes;
 
     public WsReceiverDeflater(ChannelReader<WsReceiverMessageReader> channel, int maxHeaderBytes, TimeSpan cacheSlidingExpiration, TimeSpan cacheEvictionInterval) {
         _in = channel;
-        MaxHeaderBytes = maxHeaderBytes;
+        _maxHeaderBytes = maxHeaderBytes;
         _handlers = new(cacheSlidingExpiration, cacheEvictionInterval);
     }
-
-    public int MaxHeaderBytes { get; }
 
     [MemberNotNullWhen(true, nameof(_cts)), MemberNotNullWhen(true, nameof(_execute))]
     public bool Connected => _cts is not null & _execute is not null;
@@ -37,31 +36,21 @@ internal sealed class WsReceiverDeflater : IDisposable {
     }
 
     private async Task Consume(CancellationToken ct) {
-        var message = await _in.ReadAsync(ct).Inv();
-
-        // receive the first part of the message
-        var bytes = ArrayPool<byte>.Shared.Rent(MaxHeaderBytes);
-        int read = await message.ReadAsync(bytes, ct).Inv();
-        // peek instead of reading
-        message.Position = 0;
-        // parse the header portion of the stream, without reading the `result` property.
-        // the header is a sum-type of all possible headers.
-        var header = HeaderHelper.Parse(bytes.AsSpan(0, read));
-        ArrayPool<byte>.Shared.Return(bytes);
+        var message = await ReadAsync(ct).Inv();
         ct.ThrowIfCancellationRequested();
 
         // find the handler
-        string? id = header.Id;
+        string? id = message.Header.Id;
         if (id is null || !_handlers.TryGetValue(id, out var handler)) {
             // invalid format, or no registered -> discard message
-            await message.DisposeAsync().Inv();
+            await message.Reader.DisposeAsync().Inv();
             return;
         }
 
         // dispatch the message to the handler
         bool persist = handler.Persistent;
         try {
-            handler.Dispatch(new(header, message));
+            handler.Dispatch(message);
         } catch (OperationCanceledException) {
             // handler is canceled -> unregister
             persist = false;
@@ -81,6 +70,21 @@ internal sealed class WsReceiverDeflater : IDisposable {
 
     public bool RegisterOrGet(IHandler handler) {
         return _handlers.TryAdd(handler.Id, handler);
+    }
+
+    private async Task<WsHeaderWithMessage> ReadAsync(CancellationToken ct) {
+        var message = await _in.ReadAsync(ct).Inv();
+
+        // receive the first part of the message
+        var bytes = ArrayPool<byte>.Shared.Rent(_maxHeaderBytes);
+        int read = await message.ReadAsync(bytes, ct).Inv();
+        // peek instead of reading
+        message.Position = 0;
+        // parse the header portion of the stream, without reading the `result` property.
+        // the header is a sum-type of all possible headers.
+        var header = HeaderHelper.Parse(bytes.AsSpan(0, read));
+        ArrayPool<byte>.Shared.Return(bytes);
+        return new(header, message);
     }
 
     public void Open() {

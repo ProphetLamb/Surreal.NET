@@ -99,9 +99,9 @@ public sealed class WsClient : IDisposable {
         }
 
         // position stream beyond header and deserialize message body
-        response.Message.Position = response.Header.BytesLength;
+        response.Reader.Position = response.Header.BytesLength;
         // deserialize body
-        var body = await JsonSerializer.DeserializeAsync<JsonDocument>(response.Message, SerializerOptions.Shared, ct).Inv();
+        var body = await JsonSerializer.DeserializeAsync<JsonDocument>(response.Reader, SerializerOptions.Shared, ct).Inv();
         if (body is null) {
             ThrowInvalidResponse();
         }
