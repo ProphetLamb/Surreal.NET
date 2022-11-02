@@ -10,7 +10,7 @@ namespace SurrealDB.Ws;
 
 /// <summary>Listens for <see cref="WsReceiverMessageReader"/>s and dispatches them by their headers to different <see cref="IHandler"/>s.</summary>
 internal sealed class WsReceiverDeflater : IDisposable {
-    private readonly ChannelReader<WsReceiverMessageReader> _in;
+    private readonly ChannelReader<WsReceiverMessageReader> _channel;
     private readonly DisposingCache<string, IHandler> _handlers;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
@@ -18,7 +18,7 @@ internal sealed class WsReceiverDeflater : IDisposable {
     private readonly int _maxHeaderBytes;
 
     public WsReceiverDeflater(ChannelReader<WsReceiverMessageReader> channel, int maxHeaderBytes, TimeSpan cacheSlidingExpiration, TimeSpan cacheEvictionInterval) {
-        _in = channel;
+        _channel = channel;
         _maxHeaderBytes = maxHeaderBytes;
         _handlers = new(cacheSlidingExpiration, cacheEvictionInterval);
     }
@@ -73,7 +73,7 @@ internal sealed class WsReceiverDeflater : IDisposable {
     }
 
     private async Task<WsHeaderWithMessage> ReadAsync(CancellationToken ct) {
-        var message = await _in.ReadAsync(ct).Inv();
+        var message = await _channel.ReadAsync(ct).Inv();
 
         // receive the first part of the message
         var bytes = ArrayPool<byte>.Shared.Rent(_maxHeaderBytes);

@@ -12,8 +12,8 @@ namespace SurrealDB.Ws;
 
 /// <summary>Receives messages from a websocket server and passes them to a channel</summary>
 public sealed class WsReceiverInflater : IDisposable {
-    private readonly ClientWebSocket _ws;
-    private readonly ChannelWriter<WsReceiverMessageReader> _out;
+    private readonly ClientWebSocket _socket;
+    private readonly ChannelWriter<WsReceiverMessageReader> _channel;
     private readonly RecyclableMemoryStreamManager _memoryManager;
     private readonly object _lock = new();
     private CancellationTokenSource? _cts;
@@ -22,9 +22,9 @@ public sealed class WsReceiverInflater : IDisposable {
     private readonly int _blockSize;
     private readonly int _messageSize;
 
-    public WsReceiverInflater(ClientWebSocket ws, ChannelWriter<WsReceiverMessageReader> @out, RecyclableMemoryStreamManager memoryManager, int blockSize, int messageSize) {
-        _ws = ws;
-        _out = @out;
+    public WsReceiverInflater(ClientWebSocket socket, ChannelWriter<WsReceiverMessageReader> channel, RecyclableMemoryStreamManager memoryManager, int blockSize, int messageSize) {
+        _socket = socket;
+        _channel = channel;
         _memoryManager = memoryManager;
         _blockSize = blockSize;
         _messageSize = messageSize;
@@ -41,18 +41,18 @@ public sealed class WsReceiverInflater : IDisposable {
 
     private async Task Produce(byte[] buffer, CancellationToken ct) {
         // receive the first part
-        var result = await _ws.ReceiveAsync(buffer, ct).Inv();
+        var result = await _socket.ReceiveAsync(buffer, ct).Inv();
         // create a new message with a RecyclableMemoryStream
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
         WsReceiverMessageReader msg = new(_memoryManager, _messageSize);
         // begin adding the message to the output
-        var writeOutput = _out.WriteAsync(msg, ct);
+        var writeOutput = _channel.WriteAsync(msg, ct);
 
         await msg.AppendResultAsync(buffer, result, ct).Inv();
 
         while (!result.EndOfMessage && !ct.IsCancellationRequested) {
             // receive more parts
-            result = await _ws.ReceiveAsync(buffer, ct).Inv();
+            result = await _socket.ReceiveAsync(buffer, ct).Inv();
             await msg.AppendResultAsync(buffer, result, ct).Inv();
         }
 
@@ -113,6 +113,6 @@ public sealed class WsReceiverInflater : IDisposable {
     public void Dispose() {
         _cts?.Cancel();
         _cts?.Dispose();
-        _out.TryComplete();
+        _channel.TryComplete();
     }
 }
