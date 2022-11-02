@@ -45,7 +45,7 @@ internal sealed class WsTxConsumer : IDisposable {
         message.Position = 0;
         // parse the header portion of the stream, without reading the `result` property.
         // the header is a sum-type of all possible headers.
-        var header = HeaderHelper.Parse(bytes);
+        var header = HeaderHelper.Parse(bytes.AsSpan(0, read));
         ArrayPool<byte>.Shared.Return(bytes);
 
         // find the handler
