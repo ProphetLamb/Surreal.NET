@@ -69,20 +69,21 @@ public sealed class WsReceiverInflater : IDisposable {
         _execute = Execute(_cts.Token);
     }
 
-    public void Close() {
+    public async Task CloseAsync() {
         ThrowIfDisconnected();
+        var task = _execute;
         _cts.Cancel();
         _cts.Dispose(); // not relly needed here
         _cts = null;
         _execute = null;
-        //
-        // try {
-        //     await task.Inv();
-        // } catch (OperationCanceledException) {
-        //     // expected on close using cts
-        // } catch (WebSocketException) {
-        //     // expected on abort
-        // }
+
+        try {
+            await task.Inv();
+        } catch (OperationCanceledException) {
+            // expected on close using cts
+        } catch (WebSocketException) {
+            // expected on abort
+        }
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]

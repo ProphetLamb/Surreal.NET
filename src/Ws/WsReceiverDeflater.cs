@@ -92,7 +92,7 @@ internal sealed class WsReceiverDeflater : IDisposable {
         _execute = Execute(_cts.Token);
     }
 
-    public void Close() {
+    public async Task CloseAsync() {
         ThrowIfDisconnected();
         Task task;
         _cts.Cancel();
@@ -101,11 +101,11 @@ internal sealed class WsReceiverDeflater : IDisposable {
         task = _execute;
         _execute = null;
 
-        // try {
-        //     await task.Inv();
-        // } catch (OperationCanceledException) {
-        //     // expected on close using cts
-        // }
+        try {
+            await task.Inv();
+        } catch (OperationCanceledException) {
+            // expected on close using cts
+        }
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]
