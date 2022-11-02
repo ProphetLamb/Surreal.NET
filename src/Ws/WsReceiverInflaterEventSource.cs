@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace SurrealDB.Ws;
 
-[EventSource(Guid = "03c50b03-e245-46e5-a99a-6eaa28990a41", Name = "SurrealDB.Ws.WsReceiverDeflaterEventSource")]
+[EventSource(Guid = "91a1c84b-f0aa-43c8-ad21-6ff518a8fa01", Name = "SurrealDB.Ws.WsReceiverDeflaterEventSource")]
 public sealed class WsReceiverInflaterEventSource : EventSource
 {
     private WsReceiverInflaterEventSource() { }
