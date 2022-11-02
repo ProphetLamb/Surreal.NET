@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -38,11 +39,13 @@ internal sealed class WsTxConsumer : IDisposable {
         var message = await _in.ReadAsync(ct).Inv();
 
         // receive the first part of the message
-        var result = await message.ReceiveAsync(ct).Inv();
-        // throw if the result is a close ack
-        result.ThrowIfClose();
-        // parse the header from the message
-        WsHeader header = PeekHeader(message, result.Count);
+        var bytes = ArrayPool<byte>.Shared.Rent(MaxHeaderBytes);
+        int read = await message.ReadAsync(bytes, ct).Inv();
+        // peek instead of reading
+        message.Position = 0;
+        Debug.Assert(read == bytes.Length);
+        var header = HeaderHelper.Parse(bytes);
+        ArrayPool<byte>.Shared.Return(bytes);
 
         // find the handler
         string? id = header.Id;
@@ -53,26 +56,17 @@ internal sealed class WsTxConsumer : IDisposable {
         }
 
         // dispatch the message to the handler
+        bool persist = handler.Persistent;
         try {
             handler.Dispatch(new(header, message));
         } catch (OperationCanceledException) {
             // handler is canceled -> unregister
-            Unregister(handler.Id);
+            persist = false;
         }
 
-        if (!handler.Persistent) {
-            // handler is only used once -> unregister
+        if (!persist) {
             Unregister(handler.Id);
         }
-    }
-
-    private WsHeader PeekHeader(Stream stream, int seekLength) {
-        Span<byte> bytes = stackalloc byte[Math.Min(MaxHeaderBytes, seekLength)];
-        int read = stream.Read(bytes);
-        // peek instead of reading
-        stream.Position = 0;
-        Debug.Assert(read == bytes.Length);
-        return HeaderHelper.Parse(bytes);
     }
 
     public void Unregister(string id) {

@@ -41,12 +41,13 @@ public sealed class WsMessageReader : Stream {
         }
     }
 
-    public ValueTask<WebSocketReceiveResult> ReceiveAsync(CancellationToken ct) {
+    private ValueTask<WebSocketReceiveResult> ReceiveAsync(CancellationToken ct) {
         return _channel.Reader.ReadAsync(ct);
     }
 
-    public WebSocketReceiveResult Receive(CancellationToken ct) {
-        return ReceiveAsync(ct).Result;
+    private WebSocketReceiveResult Receive(CancellationToken ct) {
+        var t = ReceiveAsync(ct);
+        return t.IsCompleted ? t.Result : t.AsTask().Result;
     }
 
     internal ValueTask AppendResultAsync(ReadOnlyMemory<byte> buffer, WebSocketReceiveResult result, CancellationToken ct) {

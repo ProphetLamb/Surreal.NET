@@ -35,14 +35,14 @@ public sealed class WsTxProducer : IDisposable {
         while (!ct.IsCancellationRequested) {
             var buffer = ArrayPool<byte>.Shared.Rent(_blockSize);
             try {
-                await Produce(ct, buffer).Inv();
+                await Produce(buffer, ct).Inv();
             } finally {
                 ArrayPool<byte>.Shared.Return(buffer);
             }
         }
     }
 
-    private async Task Produce(CancellationToken ct, byte[] buffer) {
+    private async Task Produce(byte[] buffer, CancellationToken ct) {
         // receive the first part
         var result = await _ws.ReceiveAsync(buffer, ct).Inv();
         // create a new message with a RecyclableMemoryStream
