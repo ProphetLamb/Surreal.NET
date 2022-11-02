@@ -4,9 +4,8 @@ using System.Runtime.CompilerServices;
 
 namespace SurrealDB.Ws;
 
-[EventSource(Guid = "91a1c84b-f0aa-43c8-ad21-6ff518a8fa01", Name = "SurrealDB.Ws.WsReceiverDeflaterEventSource")]
-public sealed class WsReceiverInflaterEventSource : EventSource
-{
+[EventSource(Guid = "91a1c84b-f0aa-43c8-ad21-6ff518a8fa01", Name = "WsReceiverInflaterEventSource")]
+public sealed class WsReceiverInflaterEventSource : EventSource {
     private WsReceiverInflaterEventSource() { }
 
     public static WsReceiverInflaterEventSource Log { get; } = new();
@@ -28,16 +27,15 @@ public sealed class WsReceiverInflaterEventSource : EventSource
         }
     }
 
-    [Event(2, Level = EventLevel.Verbose, Message = "Received a block from the socket (Count = {0], EndOfMessage = {1}, Closed = {2})")]
+    [ThreadStatic]
+    private static object[]? _socketReceivedArgs;
+    [Event(2, Level = EventLevel.Verbose, Message = "Received a block from the socket (Count = {0}, EndOfMessage = {1}, Closed = {2})")]
     private unsafe void SockedReceivedCore(int count, bool endOfMessage, bool closed) {
-        EventData* payload = stackalloc EventData[3];
-        payload[0].Size = sizeof(int);
-        payload[0].DataPointer = (IntPtr)(&count);
-        payload[1].Size = sizeof(bool);
-        payload[1].DataPointer = (IntPtr)(&endOfMessage);
-        payload[2].Size = sizeof(bool);
-        payload[2].DataPointer = (IntPtr)(&closed);
-        WriteEventCore(2, 3, payload);
+        _socketReceivedArgs ??= new object[3];
+        _socketReceivedArgs[0] = count;
+        _socketReceivedArgs[1] = endOfMessage;
+        _socketReceivedArgs[2] = closed;
+        WriteEvent(2, _socketReceivedArgs);
     }
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -67,7 +65,7 @@ public sealed class WsReceiverInflaterEventSource : EventSource
         }
     }
 
-    [Event(5, Level = EventLevel.Informational, Message = "Inflater opened and is now pushing to the channel")]
+    [Event(5, Level = EventLevel.Informational, Message = "Opened and is now pushing to the channel")]
     private void OpenedCore() => WriteEvent(5);
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -77,7 +75,7 @@ public sealed class WsReceiverInflaterEventSource : EventSource
         }
     }
 
-    [Event(6, Level = EventLevel.Informational, Message = "Inflater closed and stopped pushing to the channel")]
+    [Event(6, Level = EventLevel.Informational, Message = "Closed and stopped pushing to the channel")]
     private void CloseBeginCore() => WriteEvent(6);
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -87,7 +85,7 @@ public sealed class WsReceiverInflaterEventSource : EventSource
         }
     }
 
-    [Event(7, Level = EventLevel.Informational, Message = "Inflater closing has finished")]
+    [Event(7, Level = EventLevel.Informational, Message = "Closing has finished")]
     private void CloseFinishCore() => WriteEvent(7);
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -97,6 +95,6 @@ public sealed class WsReceiverInflaterEventSource : EventSource
         }
     }
 
-    [Event(8, Level = EventLevel.Informational, Message = "Inflater disposed")]
+    [Event(8, Level = EventLevel.Informational, Message = "Disposed")]
     private void DisposedCore() => WriteEvent(8);
 }

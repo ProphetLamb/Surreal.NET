@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace SurrealDB.Ws;
 
-[EventSource(Guid = "03c50b03-e245-46e5-a99a-6eaa28990a41", Name = "SurrealDB.Ws.WsReceiverDeflaterEventSource")]
+[EventSource(Guid = "03c50b03-e245-46e5-a99a-6eaa28990a41", Name = "WsReceiverDeflaterEventSource")]
 public sealed class WsReceiverDeflaterEventSource : EventSource
 {
     private WsReceiverDeflaterEventSource() { }
@@ -37,19 +37,9 @@ public sealed class WsReceiverDeflaterEventSource : EventSource
         }
     }
 
-    [Event(3, Level = EventLevel.Error, Message = "The handler (Id = {0}) threw an exception during dispatch, and was unregistered")]
+    [Event(3, Level = EventLevel.Error, Message = "The handler (Id = {0}) threw an exception during dispatch, and was unregistered. ERROR: {1}")]
     private unsafe void HandlerUnregisteredAfterExceptionCore(string handlerId, string ex) {
-        EventData* payload = stackalloc EventData[2];
-        fixed (char* handlerIdPtr = handlerId) {
-            payload[0].DataPointer = (IntPtr)handlerIdPtr;
-            payload[0].Size = (handlerId.Length + 1) * 2;
-        }
-
-        fixed (char* exPtr = ex) {
-            payload[1].DataPointer = (IntPtr)exPtr;
-            payload[1].Size = (ex.Length + 1) * 2;
-        }
-        WriteEventCore(3, 2, payload);
+        WriteEvent(3, handlerId, ex);
     }
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -79,7 +69,7 @@ public sealed class WsReceiverDeflaterEventSource : EventSource
         }
     }
 
-    [Event(6, Level = EventLevel.Informational, Message = "Deflater opened and is now pulling from the channel")]
+    [Event(6, Level = EventLevel.Informational, Message = "Opened and is now pulling from the channel")]
     private void OpenedCore() => WriteEvent(6);
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,7 +79,7 @@ public sealed class WsReceiverDeflaterEventSource : EventSource
         }
     }
 
-    [Event(7, Level = EventLevel.Informational, Message = "Deflater closed and stopped pulling from the channel")]
+    [Event(7, Level = EventLevel.Informational, Message = "Closed and stopped pulling from the channel")]
     private void CloseBeginCore() => WriteEvent(7);
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,7 +89,7 @@ public sealed class WsReceiverDeflaterEventSource : EventSource
         }
     }
 
-    [Event(8, Level = EventLevel.Informational, Message = "Deflater closing has finished")]
+    [Event(8, Level = EventLevel.Informational, Message = "Closing has finished")]
     private void CloseFinishCore() => WriteEvent(8);
 
     [NonEvent, MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -109,6 +99,6 @@ public sealed class WsReceiverDeflaterEventSource : EventSource
         }
     }
 
-    [Event(9, Level = EventLevel.Informational, Message = "Deflater disposed")]
+    [Event(9, Level = EventLevel.Informational, Message = "Disposed")]
     private void DisposedCore() => WriteEvent(9);
 }

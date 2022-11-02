@@ -24,7 +24,7 @@ public class DbHandle<T> : IDisposable
     [DebuggerStepThrough]
     public static async Task WithDatabase(Func<T, Task> action) {
         // enable console logging for events
-        using ConsoleOutEventListener l = new();
+        using TestEventListener l = new();
         l.EnableEvents(WsReceiverInflaterEventSource.Log, EventLevel.LogAlways);
         l.EnableEvents(WsReceiverDeflaterEventSource.Log, EventLevel.LogAlways);
         // connect to the database
