@@ -34,6 +34,7 @@ public sealed class WsReceiverInflater : IDisposable {
         while (!ct.IsCancellationRequested) {
             var buffer = ArrayPool<byte>.Shared.Rent(_blockSize);
             await Produce(buffer, ct).Inv();
+            ArrayPool<byte>.Shared.Return(buffer);
             ct.ThrowIfCancellationRequested();
         }
     }
@@ -41,6 +42,7 @@ public sealed class WsReceiverInflater : IDisposable {
     private async Task Produce(byte[] buffer, CancellationToken ct) {
         // receive the first part
         var result = await _socket.ReceiveAsync(buffer, ct).Inv();
+        ct.ThrowIfCancellationRequested();
         // create a new message with a RecyclableMemoryStream
         // use buffer instead of the build the builtin IBufferWriter, bc of thread safely issues related to locking
         WsReceiverMessageReader msg = new(_memoryManager, _messageSize);
