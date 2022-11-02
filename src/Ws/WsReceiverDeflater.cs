@@ -34,28 +34,42 @@ internal sealed class WsReceiverDeflater : IDisposable {
     }
 
     private async Task Consume(CancellationToken ct) {
-        var message = await ReadAsync(ct).Inv();
+        var log = WsReceiverDeflaterEventSource.Log;
+
         ct.ThrowIfCancellationRequested();
+
+        // log that we are waiting for a message from the channel
+        log.MessageAwaiting();
+
+        var message = await ReadAsync(ct).Inv();
+        // log that a message has been retrieved from the channel
+        log.MessageReceived(message.Header.Id);
 
         // find the handler
         string? id = message.Header.Id;
         if (id is null || !_handlers.TryGetValue(id, out var handler)) {
             // invalid format, or no registered -> discard message
-            await message.Reader.DisposeAsync().Inv();
+            message.Dispose();
+            // log that the message has been discarded
+            log.MessageDiscarded(id);
             return;
         }
+        Debug.Assert(id == handler.Id);
 
         // dispatch the message to the handler
-        bool persist = handler.Persistent;
         try {
             handler.Dispatch(message);
-        } catch (OperationCanceledException) {
+        } catch (Exception ex) {
             // handler is canceled -> unregister
-            persist = false;
+            Unregister(id);
+            // log that the dispatch has resulted in a exception
+            log.HandlerUnregisteredAfterException(id, ex);
         }
 
-        if (!persist) {
-            Unregister(handler.Id);
+        if (!handler.Persistent) {
+            Unregister(id);
+            // log that the handler has been unregistered
+            log.HandlerUnregisterdFleeting(id);
         }
     }
 
@@ -86,12 +100,18 @@ internal sealed class WsReceiverDeflater : IDisposable {
     }
 
     public void Open() {
+        var log = WsReceiverDeflaterEventSource.Log;
+
         ThrowIfConnected();
         _cts = new();
         _execute = Execute(_cts.Token);
+
+        log.Opened();
     }
 
     public async Task CloseAsync() {
+        var log = WsReceiverDeflaterEventSource.Log;
+
         ThrowIfDisconnected();
         Task task;
         _cts.Cancel();
@@ -100,11 +120,24 @@ internal sealed class WsReceiverDeflater : IDisposable {
         task = _execute;
         _execute = null;
 
+        log.CloseBegin();
+
         try {
             await task.Inv();
         } catch (OperationCanceledException) {
             // expected on close using cts
         }
+
+        log.CloseFinish();
+    }
+
+    public void Dispose() {
+        var log = WsReceiverDeflaterEventSource.Log;
+
+        _cts?.Cancel();
+        _cts?.Dispose();
+
+        log.Disposed();
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]
@@ -118,10 +151,5 @@ internal sealed class WsReceiverDeflater : IDisposable {
         if (Connected) {
             throw new InvalidOperationException("The connection is already open");
         }
-    }
-
-    public void Dispose() {
-        _cts?.Cancel();
-        _cts?.Dispose();
     }
 }
