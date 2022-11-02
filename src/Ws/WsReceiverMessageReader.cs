@@ -21,14 +21,13 @@ public sealed class WsReceiverMessageReader : Stream {
         _endOfMessage = 0;
     }
 
-    public bool HasReceivedEndOfMessage => Interlocked.Add(ref _endOfMessage, 0) == 1;
+    public bool HasReceivedEndOfMessage => Interlocked.CompareExchange(ref _endOfMessage, 0, 0) != 0;
 
     protected override void Dispose(bool disposing) {
         if (!disposing) {
             return;
         }
 
-        Interlocked.MemoryBarrierProcessWide();
         _stream.Dispose();
         _channel.Dispose();
     }
@@ -68,15 +67,17 @@ public sealed class WsReceiverMessageReader : Stream {
     public override bool CanWrite => false;
     public override long Length {
         get {
-            Interlocked.MemoryBarrierProcessWide();
-            return _stream.Length;
+            lock (_stream) {
+                return _stream.Length;
+            }
         }
     }
 
     public override long Position {
         get {
-            Interlocked.MemoryBarrierProcessWide();
-            return _stream.Position;
+            lock (_stream) {
+                return _stream.Position;
+            }
         }
         set {
             lock (_stream) {
@@ -97,7 +98,11 @@ public sealed class WsReceiverMessageReader : Stream {
         return Read(buffer, default);
     }
 
-    private int Read(Span<byte> buffer, CancellationToken ct) {
+    public int Read(Span<byte> buffer, CancellationToken ct) {
+        if (0 >= (uint)buffer.Length || ct.IsCancellationRequested) {
+            return 0;
+        }
+
         int read;
         lock (_stream) {
             // attempt to read from present buffer
@@ -109,21 +114,18 @@ public sealed class WsReceiverMessageReader : Stream {
             return read;
         }
 
-        while (true) {
-            var result = Receive(ct);
+        WebSocketReceiveResult result;
+        do {
+            result = Receive(ct);
             int inc;
             lock (_stream) {
                 inc = _stream.Read(buffer.Slice(read));
             }
-            ct.ThrowIfCancellationRequested();
 
+            ct.ThrowIfCancellationRequested();
             Debug.Assert(inc == result.Count);
             read += inc;
-
-            if (result.EndOfMessage) {
-                break;
-            }
-        }
+        } while (!result.EndOfMessage);
 
         return read;
     }
@@ -134,10 +136,10 @@ public sealed class WsReceiverMessageReader : Stream {
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) {
-        return ct.IsCancellationRequested ? new(0) : ReadInternalAsync(buffer, ct);
-    }
+        if (0 >= (uint)buffer.Length || ct.IsCancellationRequested) {
+            return new(0);
+        }
 
-    private ValueTask<int> ReadInternalAsync(Memory<byte> buffer, CancellationToken ct) {
         int read;
         lock (_stream) {
             // attempt to read from present buffer
@@ -153,21 +155,19 @@ public sealed class WsReceiverMessageReader : Stream {
     }
 
     private async Task<int> ReadFromChannelAsync(Memory<byte> buffer, int read, CancellationToken ct) {
-        while (true) {
-            var result = await ReceiveAsync(ct).Inv();
+        WebSocketReceiveResult? result;
+        do {
+            result = await ReceiveAsync(ct).Inv();
             int inc;
             lock (_stream) {
                 inc = _stream.Read(buffer.Span.Slice(read));
             }
+
             ct.ThrowIfCancellationRequested();
 
             Debug.Assert(inc == result.Count);
             read += inc;
-
-            if (result.EndOfMessage) {
-                break;
-            }
-        }
+        } while (!result.EndOfMessage);
 
         return read;
     }
