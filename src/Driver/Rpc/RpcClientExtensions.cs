@@ -5,7 +5,6 @@ using System.Text.Json;
 
 using SurrealDB.Common;
 using SurrealDB.Json;
-using SurrealDB.Models;
 using SurrealDB.Models.Result;
 using SurrealDB.Ws;
 

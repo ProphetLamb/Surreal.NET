@@ -1,5 +1,4 @@
 using SurrealDB.Abstractions;
-using SurrealDB.Common;
 
 namespace SurrealDB.Shared.Tests;
 

@@ -1,5 +1,3 @@
-using System.Collections;
-
 using SurrealDB.Json;
 using SurrealDB.Models.Result;
 

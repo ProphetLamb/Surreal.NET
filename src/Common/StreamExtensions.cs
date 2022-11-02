@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace SurrealDB.Common;
 
 internal static class StreamExtensions {

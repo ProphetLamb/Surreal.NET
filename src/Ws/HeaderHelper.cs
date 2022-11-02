@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Net.WebSockets;
 using System.Text.Json;
 
 using SurrealDB.Common;
