@@ -3,7 +3,7 @@ using SurrealDB.Common;
 
 namespace SurrealDB.Shared.Tests;
 
-public class DbHandle<T> : IAsyncDisposable
+public class DbHandle<T> : IDisposable
     where T: IDatabase, IDisposable, new() {
     private Process? _process;
 
@@ -21,24 +21,21 @@ public class DbHandle<T> : IAsyncDisposable
 
     [DebuggerStepThrough]
     public static async Task WithDatabase(Func<T, Task> action) {
-        await using DbHandle<T> db = await Create();
+        using DbHandle<T> db = await Create();
         await action(db.Database);
     }
 
     public T Database { get; }
 
-    public ValueTask DisposeAsync() {
+    public void Dispose() {
         Process? p = _process;
         _process = null;
         if (p is not null) {
-            return new(DisposeActualAsync(p));
+            DisposeActual(p);
         }
-
-        return default;
     }
 
-    private async Task DisposeActualAsync(Process p) {
-        //await Database.Close().Inv();
+    private void DisposeActual(Process p) {
         Database.Dispose();
         p.Kill();
     }
