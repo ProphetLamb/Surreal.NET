@@ -12,7 +12,6 @@ namespace SurrealDB.Ws;
 internal sealed class WsReceiverDeflater : IDisposable {
     private readonly ChannelReader<WsReceiverMessageReader> _channel;
     private readonly DisposingCache<string, IHandler> _handlers;
-    private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
     private readonly int _maxHeaderBytes;
@@ -89,34 +88,24 @@ internal sealed class WsReceiverDeflater : IDisposable {
 
     public void Open() {
         ThrowIfConnected();
-        lock (_lock) {
-            if (Connected) {
-                return;
-            }
-            _cts = new();
-            _execute = Execute(_cts.Token);
-        }
+        _cts = new();
+        _execute = Execute(_cts.Token);
     }
 
-    public async Task Close() {
+    public void Close() {
         ThrowIfDisconnected();
         Task task;
-        lock (_lock) {
-            if (!Connected) {
-                return;
-            }
-            _cts.Cancel();
-            _cts.Dispose(); // not relly needed here
-            _cts = null;
-            task = _execute;
-            _execute = null;
-        }
+        _cts.Cancel();
+        _cts.Dispose(); // not relly needed here
+        _cts = null;
+        task = _execute;
+        _execute = null;
 
-        try {
-            await task.Inv();
-        } catch (OperationCanceledException) {
-            // expected on close using cts
-        }
+        // try {
+        //     await task.Inv();
+        // } catch (OperationCanceledException) {
+        //     // expected on close using cts
+        // }
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]

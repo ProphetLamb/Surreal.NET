@@ -15,7 +15,6 @@ public sealed class WsReceiverInflater : IDisposable {
     private readonly ClientWebSocket _socket;
     private readonly ChannelWriter<WsReceiverMessageReader> _channel;
     private readonly RecyclableMemoryStreamManager _memoryManager;
-    private readonly object _lock = new();
     private CancellationTokenSource? _cts;
     private Task? _execute;
 
@@ -66,35 +65,24 @@ public sealed class WsReceiverInflater : IDisposable {
 
     public void Open() {
         ThrowIfConnected();
-        lock (_lock) {
-            if (Connected) {
-                return;
-            }
-            _cts = new();
-            _execute = Execute(_cts.Token);
-        }
+        _cts = new();
+        _execute = Execute(_cts.Token);
     }
 
-    public async Task Close() {
+    public void Close() {
         ThrowIfDisconnected();
-        Task task = _execute;
-        lock (_lock) {
-            if (!Connected) {
-                return;
-            }
-            _cts.Cancel();
-            _cts.Dispose(); // not relly needed here
-            _cts = null;
-            _execute = null;
-        }
-
-        try {
-            await task.Inv();
-        } catch (OperationCanceledException) {
-            // expected on close using cts
-        } catch (WebSocketException) {
-            // expected on abort
-        }
+        _cts.Cancel();
+        _cts.Dispose(); // not relly needed here
+        _cts = null;
+        _execute = null;
+        //
+        // try {
+        //     await task.Inv();
+        // } catch (OperationCanceledException) {
+        //     // expected on close using cts
+        // } catch (WebSocketException) {
+        //     // expected on abort
+        // }
     }
 
     [MemberNotNull(nameof(_cts)), MemberNotNull(nameof(_execute))]

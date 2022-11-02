@@ -60,8 +60,8 @@ public sealed class WsClient : IDisposable {
     public async Task CloseAsync(CancellationToken ct = default) {
         ThrowIfDisconnected();
         await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "client connection closed orderly", ct).Inv();
-        await _deflater.Close().Inv();
-        await _inflater.Close().Inv();
+        _deflater.Close();
+        _inflater.Close();
     }
 
     /// <inheritdoc cref="IDisposable" />
