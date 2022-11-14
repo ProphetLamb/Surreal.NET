@@ -329,6 +329,7 @@ public sealed class DatabaseRest : IDatabase {
             if (_vars.TryGetValue(varName, out object? varValue)) {
                 result.Append(ToJson(varValue));
             } else if (vars?.TryGetValue(varName, out varValue) == true) {
+                result.Append('$');
                 result.Append(ToJson(varValue));
             } else {
                 result.Append(template.AsSpan(start, i - start));
