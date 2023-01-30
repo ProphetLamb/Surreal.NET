@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<RootNamespace>SurrealDB.Ws</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup Label="Nuget Pack Options">
@@ -20,6 +21,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.1" />
+		<PackageReference Include="System.Threading.Channels" Version="6.0.0" />
 	</ItemGroup>
-
 </Project>

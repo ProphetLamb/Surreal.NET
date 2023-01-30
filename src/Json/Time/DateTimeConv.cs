@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -49,13 +51,13 @@ public sealed class DateTimeConv : JsonConverter<DateTime> {
         return value.ToString("O");
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static DateTime ThrowParseInvalid(string? s) {
         throw new ParseException($"Unable to parse DateTime from `{s}`");
     }
 
-    
-    [DoesNotReturn]
+
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static DateTime ThrowJsonTokenTypeInvalid() {
         throw new JsonException("Cannot deserialize a non numeric non string token as a DateTime.");
     }

@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -49,12 +51,12 @@ public sealed class DateTimeOffsetConv : JsonConverter<DateTimeOffset> {
         return value.ToString("O");
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static DateTimeOffset ThrowParseInvalid(string? s) {
         throw new ParseException($"Unable to parse DateTimeOffset from `{s}`");
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static DateTimeOffset ThrowJsonTokenInvalid() {
         throw new JsonException("Cannot deserialize a non numeric non string token as a DateTime.");
     }

@@ -304,7 +304,7 @@ GROUP BY RegisteredCountry;";
         async db => {
             var taskCount = 50;
             var tasks = Enumerable.Range(0, taskCount).Select(i => DbTask(i, db));
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            await Task.WhenAll(tasks).Inv();
         }
     );
 
@@ -314,17 +314,17 @@ GROUP BY RegisteredCountry;";
         var expectedResult = new TestObject<int, int>(i, i);
         Thing thing = Thing.From("object", expectedResult.Key);
 
-        var createResponse = await db.Create(thing, expectedResult).ConfigureAwait(false);
+        var createResponse = await db.Create(thing, expectedResult).Inv();
         AssertResponse(createResponse, expectedResult);
         Logger.WriteLine($"Create {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
 
-        var selectResponse = await db.Select(thing).ConfigureAwait(false);
+        var selectResponse = await db.Select(thing).Inv();
         AssertResponse(selectResponse, expectedResult);
         Logger.WriteLine($"Select {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
 
         string sql = "SELECT * FROM $record";
         Dictionary<string, object?> param = new() { ["record"] = thing };
-        var queryResponse = await db.Query(sql, param).ConfigureAwait(false);
+        var queryResponse = await db.Query(sql, param).Inv();
         AssertResponse(queryResponse, expectedResult);
         Logger.WriteLine($"Query {i} - Thread ID {Thread.CurrentThread.ManagedThreadId}");
 

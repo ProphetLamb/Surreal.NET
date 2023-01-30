@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -57,13 +59,13 @@ public sealed class TimeSpanConv : JsonConverter<TimeSpan> {
         return $"{value.Days}d{value.Hours}h{value.Minutes}m{value.Seconds}s{value.Milliseconds}ms";
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static TimeSpan ThrowParseInvalid(string? s) {
         throw new ParseException($"Unable to parse TimeSpan from `{s}`");
     }
 
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static TimeSpan ThrowJsonTokenTypeInvalid() {
         throw new JsonException("Cannot deserialize a non numeric non string token as a TimeSpan.");
     }

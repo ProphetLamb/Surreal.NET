@@ -55,7 +55,7 @@ public sealed class DatabaseRpc : IDatabase {
 
         // Open connection
         InvalidConfigException.ThrowIfNull(_config.RpcEndpoint);
-        await _client.Open(_config.RpcEndpoint!, ct);
+        await _client.OpenAsync(_config.RpcEndpoint!, ct);
 
         // Authenticate
         if (_config.Username != null && _config.Password != null) {
@@ -70,7 +70,7 @@ public sealed class DatabaseRpc : IDatabase {
 
     public async Task Close(CancellationToken ct = default) {
         _configured = false;
-        await _client.Close(ct);
+        await _client.CloseAsync(ct);
     }
 
     /// <param name="ct"> </param>

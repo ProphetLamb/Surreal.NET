@@ -1,9 +1,10 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 using SurrealDB.Common;
 using SurrealDB.Json;
-using SurrealDB.Models;
 using SurrealDB.Models.Result;
 using SurrealDB.Ws;
 
@@ -12,7 +13,6 @@ using DriverResponse = SurrealDB.Models.Result.DriverResponse;
 namespace SurrealDB.Driver.Rpc;
 
 internal static class RpcClientExtensions {
-
     internal static async Task<DriverResponse> ToSurreal(this Task<WsClient.Response> rsp) => ToSurreal(await rsp);
     internal static DriverResponse ToSurreal(this WsClient.Response rsp){
         if (rsp.id is null) {
@@ -90,7 +90,7 @@ internal static class RpcClientExtensions {
         return DriverResponse.FromOwned(builder.AsSegment());
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static void ThrowIdMissing() {
         throw new InvalidOperationException("Response does not have an id.");
     }

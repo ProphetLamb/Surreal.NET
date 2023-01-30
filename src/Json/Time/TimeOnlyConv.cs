@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -46,12 +48,12 @@ public sealed class TimeOnlyConv : JsonConverter<TimeOnly> {
         return $"{value.Hour.ToString("D2")}:{value.Minute.ToString("D2")}:{value.Second.ToString("D2")}.{value.FractionString()}";
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static TimeOnly ThrowParseInvalid(string? s) {
         throw new ParseException($"Unable to parse TimeOnly from `{s}`");
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private TimeOnly ThrowJsonTokenTypeInvalid() {
         throw new JsonException("Cannot deserialize a non string token as a TimeOnly.");
     }

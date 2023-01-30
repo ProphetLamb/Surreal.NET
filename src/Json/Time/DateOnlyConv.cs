@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -44,14 +46,14 @@ public sealed class DateOnlyConv : JsonConverter<DateOnly> {
     public static string ToString(in DateOnly value) {
         return $"{value.Year.ToString("D4")}-{value.Month.ToString("D2")}-{value.Day.ToString("D2")}";
     }
-    
-    [DoesNotReturn]
+
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static DateOnly ThrowParseInvalid(string? s) {
         throw new ParseException($"Unable to parse DateOnly from `{s}`");
     }
 
-    [DoesNotReturn]
-    private DateOnly ThrowJsonTokenTypeInvalid() {
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
+    private static DateOnly ThrowJsonTokenTypeInvalid() {
         throw new JsonException("Cannot deserialize a non string token as a DateOnly.");
     }
 }

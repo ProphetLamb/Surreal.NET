@@ -259,7 +259,7 @@ public readonly struct ResultValue : IEquatable<ResultValue>, IComparable<Result
         return Kind.None;
     }
 
-    [DoesNotReturn, DebuggerStepThrough,]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static ResultValue ThrowUnknownJsonValueKind(JsonElement json) {
         throw new ArgumentOutOfRangeException(nameof(json), json.ValueKind, "Unknown value kind.");
     }
@@ -386,7 +386,7 @@ public readonly struct ResultValue : IEquatable<ResultValue>, IComparable<Result
         return Inner.ToString();
     }
 
-    [DoesNotReturn, DebuggerStepThrough,]
+    [DoesNotReturn, DebuggerStepThrough, MethodImpl(MethodImplOptions.NoInlining)]
     private static int ThrowInvalidCompareTypes() {
         throw new InvalidOperationException("Cannot compare SurrealResult of different types, if one or more is not numeric..");
     }
