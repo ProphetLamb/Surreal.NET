@@ -8,9 +8,9 @@ using SurrealDB.Driver.Rpc;
 namespace SurrealDB.Extensions.Service;
 
 public static class Extensions {
-    public static IServiceCollection AddSurrealDB(this IServiceCollection services, Action<ConfigBuilder.Basic> configure) {
-        var builder = ConfigBuilder.Create();
-        configure(builder);
+    public static IServiceCollection AddSurrealDB(this IServiceCollection services, Func<ConfigBuilder.Basic, IConfigBuilder> configure) {
+        var basicBuilder = ConfigBuilder.Create();
+        var builder = configure(basicBuilder);
         Config config = builder.Build();
 
         services.AddOptions();
