@@ -1,3 +1,6 @@
+This repository is no longer under active development, please use [surrealdb.net](https://github.com/surrealdb/surrealdb.net) instead
+
+
 ![Build Status](https://github.com/ProphetLamb/Surreal.Net/actions/workflows/build.yml/badge.svg)
 [![CodeFactor](https://www.codefactor.io/repository/github/prophetlamb/surreal.net/badge)](https://www.codefactor.io/repository/github/prophetlamb/surreal.net)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/315508e8f6bf4829ab7d5a0467b0c693)](https://www.codacy.com/gh/ProphetLamb/Surreal.Net/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ProphetLamb/Surreal.Net&amp;utm_campaign=Badge_Grade)
