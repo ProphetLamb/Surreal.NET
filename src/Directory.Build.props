@@ -30,7 +30,7 @@
 
 	<ItemGroup Condition="!$(DefineConstants.Contains('NET6_0_OR_GREATER'))">
 		<PackageReference Include="System.Memory" Version="4.5.5" />
-		<PackageReference Include="Portable.System.DateTimeOnly" Version="7.0.0" />
+		<PackageReference Include="Portable.System.DateTimeOnly" Version="7.0.1" />
 		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
 	</ItemGroup>
 </Project>
